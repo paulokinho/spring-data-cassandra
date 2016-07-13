@@ -686,6 +686,13 @@ The comma-delimited base packages in which to scan for entities and their mappin
 					]]></xsd:documentation>
 				</xsd:annotation>
 			</xsd:attribute>
+			<xsd:attribute name="id" type="xsd:ID" use="optional">
+				<xsd:annotation>
+					<xsd:documentation><![CDATA[
+	The name of the mapping context; default is "cassandraMapping".
+					]]></xsd:documentation>
+				</xsd:annotation>
+			</xsd:attribute>
 		</xsd:complexType>
 	</xsd:element>
 
@@ -767,6 +774,13 @@ Defines a CassandraConverter for getting rich mapping functionality.
 			</xsd:appinfo>
 		</xsd:annotation>
 		<xsd:complexType>
+			<xsd:attribute name="id" type="xsd:ID" use="optional">
+				<xsd:annotation>
+					<xsd:documentation><![CDATA[
+	The name of the Cassandra converter; default is "cassandraConverter".
+					]]></xsd:documentation>
+				</xsd:annotation>
+			</xsd:attribute>
 			<xsd:attribute name="mapping-ref" type="mappingContextRef" use="optional">
 				<xsd:annotation>
 					<xsd:documentation

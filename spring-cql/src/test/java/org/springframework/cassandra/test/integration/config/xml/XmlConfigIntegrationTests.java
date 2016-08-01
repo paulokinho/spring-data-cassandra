@@ -15,8 +15,8 @@
  */
 package org.springframework.cassandra.test.integration.config.xml;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -95,20 +95,19 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 	@Test
 	public void clusterConfigurationIsCorrect() {
-		assertThat(cluster.getConfiguration().getPolicies().getAddressTranslator(), is(equalTo(addressTranslator)));
-		assertThat(cluster.getClusterName(), is(equalTo("skynet")));
-		assertThat(cluster.getConfiguration().getProtocolOptions().getMaxSchemaAgreementWaitSeconds(), is(equalTo(30)));
+		assertThat(cluster.getConfiguration().getPolicies().getAddressTranslator()).isEqualTo(addressTranslator);
+		assertThat(cluster.getClusterName()).isEqualTo("skynet");
+		assertThat(cluster.getConfiguration().getProtocolOptions().getMaxSchemaAgreementWaitSeconds()).isEqualTo(30);
 
-		assertThat(cluster.getConfiguration().getPolicies().getSpeculativeExecutionPolicy(),
-			is(equalTo(speculativeExecutionPolicy)));
+		assertThat(cluster.getConfiguration().getPolicies().getSpeculativeExecutionPolicy()).isEqualTo(speculativeExecutionPolicy);
 
-		assertThat(cluster.getConfiguration().getPolicies().getTimestampGenerator(), is(equalTo(timestampGenerator)));
+		assertThat(cluster.getConfiguration().getPolicies().getTimestampGenerator()).isEqualTo(timestampGenerator);
 	}
 
 	@Test
 	public void clusterBuilderConfigurerWasCalled() {
-		assertThat(clusterBuilderConfigurer, is(instanceOf(TestClusterBuilderConfigurer.class)));
-		assertThat(((TestClusterBuilderConfigurer) clusterBuilderConfigurer).configureCalled.get(), is(true));
+		assertThat(clusterBuilderConfigurer).isInstanceOf(TestClusterBuilderConfigurer.class);
+		assertThat(((TestClusterBuilderConfigurer) clusterBuilderConfigurer).configureCalled.get()).isTrue();
 	}
 
 	/**
@@ -119,19 +118,19 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 		PoolingOptions poolingOptions = cluster.getConfiguration().getPoolingOptions();
 
-		assertThat(poolingOptions, is(notNullValue(PoolingOptions.class)));
-		assertThat(poolingOptions.getHeartbeatIntervalSeconds(), is(equalTo(60)));
-		assertThat(poolingOptions.getIdleTimeoutSeconds(), is(equalTo(300)));
-		assertThat(poolingOptions.getInitializationExecutor(), is(equalTo(executor)));
-		assertThat(poolingOptions.getPoolTimeoutMillis(), is(equalTo(15000)));
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL), is(equalTo(2)));
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL), is(equalTo(8)));
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL), is(equalTo(100)));
-		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.LOCAL), is(equalTo(25)));
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE), is(equalTo(1)));
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE), is(equalTo(2)));
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE), is(equalTo(100)));
-		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.REMOTE), is(equalTo(25)));
+		assertThat(poolingOptions).isNotNull();
+		assertThat(poolingOptions.getHeartbeatIntervalSeconds()).isEqualTo(60);
+		assertThat(poolingOptions.getIdleTimeoutSeconds()).isEqualTo(300);
+		assertThat(poolingOptions.getInitializationExecutor()).isEqualTo(executor);
+		assertThat(poolingOptions.getPoolTimeoutMillis()).isEqualTo(15000);
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(2);
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL)).isEqualTo(100);
+		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.LOCAL)).isEqualTo(25);
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(1);
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(2);
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE)).isEqualTo(100);
+		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.REMOTE)).isEqualTo(25);
 	}
 
 	/**
@@ -142,15 +141,15 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 		SocketOptions socketOptions = cluster.getConfiguration().getSocketOptions();
 
-		assertThat(socketOptions, is(notNullValue(SocketOptions.class)));
-		assertThat(socketOptions.getConnectTimeoutMillis(), is(equalTo(5000)));
-		assertThat(socketOptions.getKeepAlive(), is(true));
-		assertThat(socketOptions.getReadTimeoutMillis(), is(equalTo(60000)));
-		assertThat(socketOptions.getReceiveBufferSize(), is(equalTo(65536)));
-		assertThat(socketOptions.getReuseAddress(), is(true));
-		assertThat(socketOptions.getSendBufferSize(), is(equalTo(65536)));
-		assertThat(socketOptions.getSoLinger(), is(equalTo(60)));
-		assertThat(socketOptions.getTcpNoDelay(), is(true));
+		assertThat(socketOptions).isNotNull();
+		assertThat(socketOptions.getConnectTimeoutMillis()).isEqualTo(5000);
+		assertThat(socketOptions.getKeepAlive()).isTrue();
+		assertThat(socketOptions.getReadTimeoutMillis()).isEqualTo(60000);
+		assertThat(socketOptions.getReceiveBufferSize()).isEqualTo(65536);
+		assertThat(socketOptions.getReuseAddress()).isTrue();
+		assertThat(socketOptions.getSendBufferSize()).isEqualTo(65536);
+		assertThat(socketOptions.getSoLinger()).isEqualTo(60);
+		assertThat(socketOptions.getTcpNoDelay()).isTrue();
 	}
 
 	public static class TestClusterBuilderConfigurer implements ClusterBuilderConfigurer {

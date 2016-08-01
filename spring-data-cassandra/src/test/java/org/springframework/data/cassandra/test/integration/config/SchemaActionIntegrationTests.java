@@ -16,8 +16,8 @@
 
 package org.springframework.data.cassandra.test.integration.config;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -91,17 +91,16 @@ public class SchemaActionIntegrationTests extends AbstractEmbeddedCassandraInteg
 		Metadata clusterMetadata = session.getCluster().getMetadata();
 		KeyspaceMetadata keyspaceMetadata = clusterMetadata.getKeyspace(KEYSPACE_NAME);
 
-		assertThat(String.format("Keyspace [%s] does not exist!", KEYSPACE_NAME), keyspaceMetadata, is(notNullValue()));
+		assertThat(keyspaceMetadata).isNotNull();
 
 		TableMetadata tableMetadata = keyspaceMetadata.getTable(tableName);
 
-		assertThat(String.format("Table [%s] does not exist!", tableName), tableMetadata, is(notNullValue()));
+		assertThat(tableMetadata).isNotNull();
 
-		assertThat(tableMetadata.getColumns().size(), is(equalTo(columns.length)));
+		assertThat(tableMetadata.getColumns()).hasSize(columns.length);
 
 		for (String columnName : columns) {
-			assertThat(String.format("Column [%s] dos not exist!", columnName), tableMetadata.getColumn(columnName),
-					is(notNullValue()));
+			assertThat(tableMetadata.getColumn(columnName)).isNotNull();
 		}
 	}
 
@@ -119,16 +118,19 @@ public class SchemaActionIntegrationTests extends AbstractEmbeddedCassandraInteg
 
 	@Test
 	public void createWithExistingTableThrowsErrorWhenCreatingTableFromEntity() {
-		exception.expect(BeanCreationException.class);
-		exception.expectMessage(containsString(String.format("Table %s.person already exists", KEYSPACE_NAME)));
 
-		doInSessionWithConfiguration(CreateWithExistingTableConfiguration.class, new SessionCallback<Object>() {
-			@Override
-			public Object doInSession(Session s) throws DataAccessException {
-				fail(String.format("%s should have failed!", CreateWithExistingTableConfiguration.class.getSimpleName()));
-				return null;
-			}
-		});
+		try {
+			doInSessionWithConfiguration(CreateWithExistingTableConfiguration.class, new SessionCallback<Object>() {
+				@Override
+				public Object doInSession(Session s) throws DataAccessException {
+					fail(String.format("%s should have failed!", CreateWithExistingTableConfiguration.class.getSimpleName()));
+					return null;
+				}
+			});
+			fail("Missing BeanCreationException");
+		} catch (BeanCreationException e) {
+			assertThat(e).hasMessageContaining(String.format("Table %s.person already exists", KEYSPACE_NAME));
+		}
 	}
 
 	@Test

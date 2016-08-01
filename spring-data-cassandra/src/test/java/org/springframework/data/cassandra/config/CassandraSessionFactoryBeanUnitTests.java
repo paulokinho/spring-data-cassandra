@@ -16,8 +16,8 @@
 
 package org.springframework.data.cassandra.config;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -93,7 +93,7 @@ public class CassandraSessionFactoryBeanUnitTests {
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
-				assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.RECREATE)));
+				assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.RECREATE);
 				return null;
 			}
 		}).when(factoryBean).performSchemaAction();
@@ -101,13 +101,13 @@ public class CassandraSessionFactoryBeanUnitTests {
 		factoryBean.setConverter(mockConverter);
 		factoryBean.setSchemaAction(SchemaAction.RECREATE);
 
-		assertThat(factoryBean.getConverter(), is(equalTo(mockConverter)));
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.RECREATE)));
+		assertThat(factoryBean.getConverter()).isEqualTo(mockConverter);
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.RECREATE);
 
 		factoryBean.afterPropertiesSet();
 
-		assertThat(factoryBean.getCassandraAdminOperations(), is(notNullValue(CassandraAdminOperations.class)));
-		assertThat(factoryBean.getObject(), is(equalTo(mockSession)));
+		assertThat(factoryBean.getCassandraAdminOperations()).isNotNull();
+		assertThat(factoryBean.getObject()).isEqualTo(mockSession);
 
 		verify(factoryBean, times(1)).performSchemaAction();
 	}
@@ -115,7 +115,6 @@ public class CassandraSessionFactoryBeanUnitTests {
 	@Test
 	public void afterPropertiesSetThrowsIllegalStateExceptionWhenConverterIsNull() throws Exception {
 		exception.expect(IllegalStateException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("Converter was not properly initialized");
 
 		factoryBean.setCluster(mockCluster);
@@ -128,16 +127,16 @@ public class CassandraSessionFactoryBeanUnitTests {
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
-				assertThat(invocationOnMock.getArgumentAt(0, Boolean.class), is(equalTo(dropTables)));
-				assertThat(invocationOnMock.getArgumentAt(1, Boolean.class), is(equalTo(dropUnused)));
-				assertThat(invocationOnMock.getArgumentAt(2, Boolean.class), is(equalTo(ifNotExists)));
+				assertThat(invocationOnMock.getArgumentAt(0, Boolean.class)).isEqualTo(dropTables);
+				assertThat(invocationOnMock.getArgumentAt(1, Boolean.class)).isEqualTo(dropUnused);
+				assertThat(invocationOnMock.getArgumentAt(2, Boolean.class)).isEqualTo(ifNotExists);
 				return null;
 			}
 		}).when(factoryBean).createTables(anyBoolean(), anyBoolean(), anyBoolean());
 
 		factoryBean.setSchemaAction(schemaAction);
 
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(schemaAction)));
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(schemaAction);
 
 		factoryBean.performSchemaAction();
 
@@ -180,7 +179,7 @@ public class CassandraSessionFactoryBeanUnitTests {
 
 		factoryBean.setSchemaAction(SchemaAction.NONE);
 
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.NONE)));
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.NONE);
 
 		factoryBean.performSchemaAction();
 
@@ -210,7 +209,7 @@ public class CassandraSessionFactoryBeanUnitTests {
 		factoryBean.setConverter(mockConverter);
 		factoryBean.setKeyspaceName("TestKeyspace");
 
-		assertThat(factoryBean.getConverter(), is(equalTo(mockConverter)));
+		assertThat(factoryBean.getConverter()).isEqualTo(mockConverter);
 
 		factoryBean.createTables(true, false, false);
 
@@ -244,7 +243,7 @@ public class CassandraSessionFactoryBeanUnitTests {
 		factoryBean.setConverter(mockConverter);
 		factoryBean.setKeyspaceName("TestKeyspace");
 
-		assertThat(factoryBean.getConverter(), is(equalTo(mockConverter)));
+		assertThat(factoryBean.getConverter()).isEqualTo(mockConverter);
 
 		factoryBean.createTables(false, false, true);
 
@@ -267,7 +266,6 @@ public class CassandraSessionFactoryBeanUnitTests {
 		when(mockMetadata.getKeyspace(anyString())).thenReturn(null);
 
 		exception.expect(IllegalStateException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("keyspace [TestKeyspace] does not exist");
 
 		factoryBean.setKeyspaceName("TestKeyspace");
@@ -283,16 +281,15 @@ public class CassandraSessionFactoryBeanUnitTests {
 
 	@Test
 	public void setAndGetConverter() {
-		assertThat(factoryBean.getConverter(), is(nullValue()));
+		assertThat(factoryBean.getConverter()).isNull();
 		factoryBean.setConverter(mockConverter);
-		assertThat(factoryBean.getConverter(), is(equalTo(mockConverter)));
+		assertThat(factoryBean.getConverter()).isEqualTo(mockConverter);
 		verifyZeroInteractions(mockConverter);
 	}
 
 	@Test
 	public void setConverterToNull() {
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("CassandraConverter must not be null");
 
 		factoryBean.setConverter(null);
@@ -300,17 +297,16 @@ public class CassandraSessionFactoryBeanUnitTests {
 
 	@Test
 	public void setAndGetSchemaAction() {
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.NONE)));
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.NONE);
 		factoryBean.setSchemaAction(SchemaAction.CREATE);
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.CREATE)));
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.CREATE);
 		factoryBean.setSchemaAction(SchemaAction.NONE);
-		assertThat(factoryBean.getSchemaAction(), is(equalTo(SchemaAction.NONE)));
+		assertThat(factoryBean.getSchemaAction()).isEqualTo(SchemaAction.NONE);
 	}
 
 	@Test
 	public void setSchemaActionToNullThrowsIllegalArgumentException() {
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("SchemaAction must not be null");
 
 		factoryBean.setSchemaAction(null);

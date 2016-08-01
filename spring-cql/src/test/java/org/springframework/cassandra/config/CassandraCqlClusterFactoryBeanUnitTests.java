@@ -16,8 +16,8 @@
 
 package org.springframework.cassandra.config;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.isA;
 
@@ -39,6 +39,7 @@ import com.datastax.driver.core.SSLOptions;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TimestampGenerator;
 import com.datastax.driver.core.policies.AddressTranslator;
+import com.datastax.driver.core.ProtocolOptions.Compression;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.Policies;
@@ -65,10 +66,10 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		CassandraCqlClusterFactoryBean bean = new CassandraCqlClusterFactoryBean();
 		bean.afterPropertiesSet();
 
-		assertThat(bean.getObject(), is(not(nullValue())));
-		assertThat(bean.getObject().isClosed(), is(false));
-		assertThat(getConfiguration(bean).getMetricsOptions(), is(not(nullValue())));
-		assertThat(getConfiguration(bean).getMetricsOptions().isJMXReportingEnabled(), is(true));
+		assertThat(bean.getObject()).isNotNull();
+		assertThat(bean.getObject().isClosed()).isFalse();
+		assertThat(getConfiguration(bean).getMetricsOptions()).isNotNull();
+		assertThat(getConfiguration(bean).getMetricsOptions().isJMXReportingEnabled()).isTrue();
 	}
 
 	/**
@@ -82,7 +83,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.afterPropertiesSet();
 		bean.destroy();
 
-		assertThat(bean.getObject().isClosed(), is(true));
+		assertThat(bean.getObject().isClosed()).isTrue();
 	}
 
 	/**
@@ -98,7 +99,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setCompressionType(compressionType);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getProtocolOptions().getCompression(), is(Compression.SNAPPY));
+		assertThat(getConfiguration(bean).getProtocolOptions().getCompression()).isEqualTo(Compression.SNAPPY);
 	}
 
 	/**
@@ -114,7 +115,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setPoolingOptions(poolingOptions);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getPoolingOptions(), is(poolingOptions));
+		assertThat(getConfiguration(bean).getPoolingOptions()).isEqualTo(poolingOptions);
 	}
 
 	/**
@@ -130,7 +131,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setSocketOptions(socketOptions);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getSocketOptions(), is(socketOptions));
+		assertThat(getConfiguration(bean).getSocketOptions()).isEqualTo(socketOptions);
 	}
 
 	/**
@@ -146,7 +147,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setQueryOptions(queryOptions);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getQueryOptions(), is(queryOptions));
+		assertThat(getConfiguration(bean).getQueryOptions()).isEqualTo(queryOptions);
 	}
 
 	/**
@@ -161,8 +162,8 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		CassandraCqlClusterFactoryBean bean = new CassandraCqlClusterFactoryBean();
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getQueryOptions(), is(not(nullValue())));
-		assertThat(getConfiguration(bean).getQueryOptions(), is(not(queryOptions)));
+		assertThat(getConfiguration(bean).getQueryOptions()).isNotNull();
+		assertThat(getConfiguration(bean).getQueryOptions()).isNotEqualTo(queryOptions);
 	}
 
 	/**
@@ -178,7 +179,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setAuthProvider(authProvider);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getProtocolOptions().getAuthProvider(), is(authProvider));
+		assertThat(getConfiguration(bean).getProtocolOptions().getAuthProvider()).isEqualTo(authProvider);
 	}
 
 	/**
@@ -196,7 +197,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.afterPropertiesSet();
 
 		AuthProvider result = getConfiguration(bean).getProtocolOptions().getAuthProvider();
-		assertThat(result, is(equalTo(authProvider)));
+		assertThat(result).isEqualTo(authProvider);
 	}
 
 	/**
@@ -213,9 +214,9 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.afterPropertiesSet();
 
 		AuthProvider result = getConfiguration(bean).getProtocolOptions().getAuthProvider();
-		assertThat(result, is(not(nullValue())));
-		assertThat(ReflectionTestUtils.getField(result, "username"), is(equalTo((Object) "user")));
-		assertThat(ReflectionTestUtils.getField(result, "password"), is(equalTo((Object) "password")));
+		assertThat(result).isNotNull();
+		assertThat(ReflectionTestUtils.getField(result, "username")).isEqualTo((Object) "user");
+		assertThat(ReflectionTestUtils.getField(result, "password")).isEqualTo((Object) "password");
 	}
 
 	/**
@@ -231,7 +232,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setLoadBalancingPolicy(loadBalancingPolicy);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getPolicies().getLoadBalancingPolicy(), is(loadBalancingPolicy));
+		assertThat(getConfiguration(bean).getPolicies().getLoadBalancingPolicy()).isEqualTo(loadBalancingPolicy);
 	}
 
 	/**
@@ -247,7 +248,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setReconnectionPolicy(reconnectionPolicy);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getPolicies().getReconnectionPolicy(), is(reconnectionPolicy));
+		assertThat(getConfiguration(bean).getPolicies().getReconnectionPolicy()).isEqualTo(reconnectionPolicy);
 	}
 
 	/**
@@ -261,8 +262,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setProtocolVersion(ProtocolVersion.V2);
 		bean.afterPropertiesSet();
 
-		assertThat(ReflectionTestUtils.getField(getConfiguration(bean).getProtocolOptions(), "initialProtocolVersion"),
-				is((Object) ProtocolVersion.V2));
+		assertThat(getConfiguration(bean).getProtocolOptions()).extracting("initialProtocolVersion").contains(ProtocolVersion.V2);
 	}
 
 	/**
@@ -279,7 +279,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setSslOptions(sslOptions);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getProtocolOptions().getSSLOptions(), is(sslOptions));
+		assertThat(getConfiguration(bean).getProtocolOptions().getSSLOptions()).isEqualTo(sslOptions);
 	}
 
 	/**
@@ -293,7 +293,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setMetricsEnabled(false);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getMetricsOptions().isEnabled(), is(false));
+		assertThat(getConfiguration(bean).getMetricsOptions().isEnabled()).isFalse();
 	}
 
 	/**
@@ -307,7 +307,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setJmxReportingEnabled(false);
 		bean.afterPropertiesSet();
 
-		assertThat(getConfiguration(bean).getMetricsOptions().isJMXReportingEnabled(), is(false));
+		assertThat(getConfiguration(bean).getMetricsOptions().isJMXReportingEnabled()).isFalse();
 	}
 
 	@Test
@@ -334,7 +334,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setAddressTranslator(mockAddressTranslator);
 		bean.afterPropertiesSet();
 
-		assertThat(getPolicies(bean).getAddressTranslator(), is(equalTo(mockAddressTranslator)));
+		assertThat(getPolicies(bean).getAddressTranslator()).isEqualTo(mockAddressTranslator);
 	}
 
 	/**
@@ -394,7 +394,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setMaxSchemaAgreementWaitSeconds(20);
 		bean.afterPropertiesSet();
 
-		assertThat(getProtocolOptions(bean).getMaxSchemaAgreementWaitSeconds(), is(equalTo(20)));
+		assertThat(getProtocolOptions(bean).getMaxSchemaAgreementWaitSeconds()).isEqualTo(20);
 	}
 
 	/**
@@ -409,7 +409,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setSpeculativeExecutionPolicy(mockSpeculativeExecutionPolicy);
 		bean.afterPropertiesSet();
 
-		assertThat(getPolicies(bean).getSpeculativeExecutionPolicy(), is(equalTo(mockSpeculativeExecutionPolicy)));
+		assertThat(getPolicies(bean).getSpeculativeExecutionPolicy()).isEqualTo(mockSpeculativeExecutionPolicy);
 	}
 
 	/**
@@ -424,7 +424,7 @@ public class CassandraCqlClusterFactoryBeanUnitTests {
 		bean.setTimestampGenerator(mockTimestampGenerator);
 		bean.afterPropertiesSet();
 
-		assertThat(getPolicies(bean).getTimestampGenerator(), is(equalTo(mockTimestampGenerator)));
+		assertThat(getPolicies(bean).getTimestampGenerator()).isEqualTo(mockTimestampGenerator);
 	}
 
 	private Policies getPolicies(CassandraCqlClusterFactoryBean bean) throws Exception {

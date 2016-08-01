@@ -15,6 +15,8 @@
  */
 package org.springframework.data.cassandra.test.integration.collections;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -90,15 +91,15 @@ public class CollectionsRowValueProviderIntegrationTests extends AbstractSpringD
 
 		BookHistory b = template.selectOne(select, BookHistory.class);
 
-		Assert.assertNotNull(b.getCheckOuts());
+		assertThat(b.getCheckOuts()).isNotNull();
 
 		log.debug("Checkouts map data");
 		for (String username : b.getCheckOuts().keySet()) {
 			log.debug(username + " has " + b.getCheckOuts().get(username) + " checkouts of this book.");
 		}
 
-		Assert.assertEquals(b.getTitle(), "Spring Data Cassandra Guide");
-		Assert.assertEquals(b.getAuthor(), "Cassandra Guru");
+		assertThat("Spring Data Cassandra Guide").isEqualTo(b.getTitle());
+		assertThat("Cassandra Guru").isEqualTo(b.getAuthor());
 
 	}
 
@@ -132,8 +133,8 @@ public class CollectionsRowValueProviderIntegrationTests extends AbstractSpringD
 
 		BookReference b = template.selectOne(select, BookReference.class);
 
-		Assert.assertNotNull(b.getReferences());
-		Assert.assertNotNull(b.getBookmarks());
+		assertThat(b.getReferences()).isNotNull();
+		assertThat(b.getBookmarks()).isNotNull();
 
 		log.debug("Bookmark List<Integer> Data");
 		for (Integer mark : b.getBookmarks()) {
@@ -145,8 +146,8 @@ public class CollectionsRowValueProviderIntegrationTests extends AbstractSpringD
 			log.debug("Reference -> " + ref);
 		}
 
-		Assert.assertEquals(b.getTitle(), "Spring Data Cassandra Guide");
-		Assert.assertEquals(b.getAuthor(), "Cassandra Guru");
+		assertThat("Spring Data Cassandra Guide").isEqualTo(b.getTitle());
+		assertThat("Cassandra Guru").isEqualTo(b.getAuthor());
 
 	}
 }

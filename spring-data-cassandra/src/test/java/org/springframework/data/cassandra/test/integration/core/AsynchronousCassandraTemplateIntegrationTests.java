@@ -15,8 +15,8 @@
  */
 package org.springframework.data.cassandra.test.integration.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assume.*;
 import static org.springframework.data.cassandra.repository.support.BasicMapId.*;
 
@@ -24,9 +24,6 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +48,10 @@ import org.springframework.data.cassandra.test.integration.support.IntegrationTe
 import org.springframework.data.cassandra.test.integration.support.TestListener;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Integration tests for asynchronous {@link CassandraTemplate} operations.
@@ -91,7 +92,7 @@ public class AsynchronousCassandraTemplateIntegrationTests extends AbstractSprin
 			throw listener.exception;
 		}
 
-		assertEquals(person, listener.entities.iterator().next());
+		assertThat(listener.entities.iterator().next()).isEqualTo(person);
 	}
 
 	@Test(expected = CancellationException.class)
@@ -155,7 +156,7 @@ public class AsynchronousCassandraTemplateIntegrationTests extends AbstractSprin
 			throw listener.exception;
 		}
 
-		assertEquals(person, listener.entities.iterator().next());
+		assertThat(listener.entities.iterator().next()).isEqualTo(person);
 	}
 
 	@Test
@@ -181,7 +182,7 @@ public class AsynchronousCassandraTemplateIntegrationTests extends AbstractSprin
 		if (listener.exception != null) {
 			throw listener.exception;
 		}
-		assertFalse(cassandraOperations.exists(Person.class, id("id", person.id)));
+		assertThat(cassandraOperations.exists(Person.class, id("id", person.id))).isFalse();
 	}
 
 	@Test(expected = CancellationException.class)
@@ -219,8 +220,8 @@ public class AsynchronousCassandraTemplateIntegrationTests extends AbstractSprin
 		cassandraOperations.selectOneAsynchronously(cql, Person.class, objectListener);
 		objectListener.await();
 
-		assertThat(objectListener.getResult(), is(notNullValue()));
-		assertThat(objectListener.getResult().id, is(equalTo(person.id)));
+		assertThat(objectListener.getResult()).isNotNull();
+		assertThat(objectListener.getResult().id).isEqualTo(person.id);
 	}
 
 	/**
@@ -235,7 +236,7 @@ public class AsynchronousCassandraTemplateIntegrationTests extends AbstractSprin
 		cassandraOperations.selectOneAsynchronously(cql, Person.class, objectListener);
 		objectListener.await();
 
-		assertThat(objectListener.getResult(), is(nullValue()));
+		assertThat(objectListener.getResult()).isNull();
 	}
 
 	@Configuration

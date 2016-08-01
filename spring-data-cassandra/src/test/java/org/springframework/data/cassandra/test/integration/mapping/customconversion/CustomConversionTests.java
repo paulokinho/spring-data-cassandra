@@ -15,8 +15,8 @@
  */
 package org.springframework.data.cassandra.test.integration.mapping.customconversion;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,8 +107,8 @@ public class CustomConversionTests {
 
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"), Row.class);
 
-		assertThat(row.getString("id"), is(equalTo("employee-id")));
-		assertThat(row.getString("person"), containsString("\"firstname\":\"Homer\""));
+		assertThat(row.getString("id")).isEqualTo("employee-id");
+		assertThat(row.getString("person")).contains("\"firstname\":\"Homer\"");
 	}
 
 	/**
@@ -127,8 +127,8 @@ public class CustomConversionTests {
 
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"), Row.class);
 
-		assertThat(row.getString("id"), is(equalTo("employee-id")));
-		assertThat(row.getString("person"), containsString("\"firstname\":\"Homer\""));
+		assertThat(row.getString("id")).isEqualTo("employee-id");
+		assertThat(row.getString("person")).contains("\"firstname\":\"Homer\"");
 	}
 
 	/**
@@ -148,11 +148,11 @@ public class CustomConversionTests {
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person", "friends", "people").from("employee"),
 				Row.class);
 
-		assertThat(row.getObject("friends"), is(instanceOf(List.class)));
-		assertThat(row.getList("friends", String.class), hasSize(2));
+		assertThat(row.getObject("friends")).isInstanceOf(List.class);
+		assertThat(row.getList("friends", String.class)).hasSize(2);
 
-		assertThat(row.getObject("people"), is(instanceOf(Set.class)));
-		assertThat(row.getSet("people", String.class), hasSize(1));
+		assertThat(row.getObject("people")).isInstanceOf(Set.class);
+		assertThat(row.getSet("people", String.class)).hasSize(1);
 	}
 
 	/**
@@ -171,11 +171,11 @@ public class CustomConversionTests {
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person", "friends", "people").from("employee"),
 				Row.class);
 
-		assertThat(row.getObject("friends"), is(instanceOf(List.class)));
-		assertThat(row.getList("friends", String.class), hasSize(2));
+		assertThat(row.getObject("friends")).isInstanceOf(List.class);
+		assertThat(row.getList("friends", String.class)).hasSize(2);
 
-		assertThat(row.getObject("people"), is(instanceOf(Set.class)));
-		assertThat(row.getSet("people", String.class), hasSize(1));
+		assertThat(row.getObject("people")).isInstanceOf(Set.class);
+		assertThat(row.getSet("people", String.class)).hasSize(1);
 	}
 
 	/**
@@ -190,10 +190,10 @@ public class CustomConversionTests {
 		Employee employee = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"),
 				Employee.class);
 
-		assertThat(employee.getId(), is(equalTo("employee-id")));
-		assertThat(employee.getPerson(), is(notNullValue()));
-		assertThat(employee.getPerson().getFirstname(), is(equalTo("Homer")));
-		assertThat(employee.getPerson().getLastname(), is(equalTo("Simpson")));
+		assertThat(employee.getId()).isEqualTo("employee-id");
+		assertThat(employee.getPerson()).isNotNull();
+		assertThat(employee.getPerson().getFirstname()).isEqualTo("Homer");
+		assertThat(employee.getPerson().getLastname()).isEqualTo("Simpson");
 	}
 
 	/**
@@ -208,11 +208,11 @@ public class CustomConversionTests {
 		Employee employee = cassandraOperations.selectOne(QueryBuilder.select("id", "people").from("employee"),
 				Employee.class);
 
-		assertThat(employee.getId(), is(equalTo("employee-id")));
-		assertThat(employee.getPeople(), is(notNullValue()));
+		assertThat(employee.getId()).isEqualTo("employee-id");
+		assertThat(employee.getPeople()).isNotNull();
 
 		Person apu = employee.getPeople().iterator().next();
-		assertThat(apu.getFirstname(), is(equalTo("Apu")));
+		assertThat(apu.getFirstname()).isEqualTo("Apu");
 	}
 
 	/**

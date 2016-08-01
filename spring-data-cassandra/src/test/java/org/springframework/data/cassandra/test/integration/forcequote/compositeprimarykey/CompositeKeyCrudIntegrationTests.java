@@ -15,7 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.forcequote.compositeprimarykey;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,7 +82,7 @@ public class CompositeKeyCrudIntegrationTests extends AbstractSpringDataEmbedded
 		select.setConsistencyLevel(ConsistencyLevel.ONE);
 		List<CorrelationEntity> correlationEntities = template1.select(select, CorrelationEntity.class);
 
-		assertEquals(2, correlationEntities.size());
+		assertThat(correlationEntities).hasSize(2);
 
 		QueryOptions qo = new QueryOptions();
 		qo.setConsistencyLevel(org.springframework.cassandra.core.ConsistencyLevel.ONE);
@@ -93,7 +93,7 @@ public class CompositeKeyCrudIntegrationTests extends AbstractSpringDataEmbedded
 
 		correlationEntities = template1.select(select, CorrelationEntity.class);
 
-		assertEquals(0, correlationEntities.size());
+		assertThat(correlationEntities).isEmpty();
 	}
 
 }

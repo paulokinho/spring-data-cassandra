@@ -16,7 +16,7 @@
 
 package org.springframework.data.cassandra.test.integration.mapping.mapid.template;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.data.cassandra.repository.support.BasicMapId.*;
 
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class CassandraTemplateMapIdIntegrationTest extends AbstractSpringDataEmb
 
 	@Before
 	public void before() {
-		assertNotNull(template);
+		assertThat(template).isNotNull();
 	}
 
 	@Test
@@ -67,27 +67,27 @@ public class CassandraTemplateMapIdIntegrationTest extends AbstractSpringDataEmb
 		SinglePkc inserted = new SinglePkc(uuid());
 		inserted.setValue(uuid());
 		SinglePkc saved = template.insert(inserted);
-		assertSame(saved, inserted);
+		assertThat(inserted).isSameAs(saved);
 
 		// select
 		MapId id = id("key", saved.getKey());
 		SinglePkc selected = template.selectOneById(SinglePkc.class, id);
-		assertNotSame(selected, saved);
-		assertEquals(saved.getKey(), selected.getKey());
-		assertEquals(saved.getValue(), selected.getValue());
+		assertThat(saved).isNotSameAs(selected);
+		assertThat(selected.getKey()).isEqualTo(saved.getKey());
+		assertThat(selected.getValue()).isEqualTo(saved.getValue());
 
 		// update
 		selected.setValue(uuid());
 		SinglePkc updated = template.update(selected);
-		assertSame(updated, selected);
+		assertThat(selected).isSameAs(updated);
 
 		selected = template.selectOneById(SinglePkc.class, id);
-		assertNotSame(selected, updated);
-		assertEquals(updated.getValue(), selected.getValue());
+		assertThat(updated).isNotSameAs(selected);
+		assertThat(selected.getValue()).isEqualTo(updated.getValue());
 
 		// delete
 		template.delete(selected);
-		assertNull(template.selectOneById(SinglePkc.class, id));
+		assertThat(template.selectOneById(SinglePkc.class, id)).isNull();
 	}
 
 	@Table
@@ -132,28 +132,28 @@ public class CassandraTemplateMapIdIntegrationTest extends AbstractSpringDataEmb
 		MultiPkc inserted = new MultiPkc(uuid(), uuid());
 		inserted.setValue(uuid());
 		MultiPkc saved = template.insert(inserted);
-		assertSame(saved, inserted);
+		assertThat(inserted).isSameAs(saved);
 
 		// select
 		MapId id = id("key0", saved.getKey0()).with("key1", saved.getKey1());
 		MultiPkc selected = template.selectOneById(MultiPkc.class, id);
-		assertNotSame(selected, saved);
-		assertEquals(saved.getKey0(), selected.getKey0());
-		assertEquals(saved.getKey1(), selected.getKey1());
-		assertEquals(saved.getValue(), selected.getValue());
+		assertThat(saved).isNotSameAs(selected);
+		assertThat(selected.getKey0()).isEqualTo(saved.getKey0());
+		assertThat(selected.getKey1()).isEqualTo(saved.getKey1());
+		assertThat(selected.getValue()).isEqualTo(saved.getValue());
 
 		// update
 		selected.setValue(uuid());
 		MultiPkc updated = template.update(selected);
-		assertSame(updated, selected);
+		assertThat(selected).isSameAs(updated);
 
 		selected = template.selectOneById(MultiPkc.class, id);
-		assertNotSame(selected, updated);
-		assertEquals(updated.getValue(), selected.getValue());
+		assertThat(updated).isNotSameAs(selected);
+		assertThat(selected.getValue()).isEqualTo(updated.getValue());
 
 		// delete
 		template.delete(selected);
-		assertNull(template.selectOneById(MultiPkc.class, id));
+		assertThat(template.selectOneById(MultiPkc.class, id)).isNull();
 	}
 
 	@Table

@@ -15,8 +15,8 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.data.cassandra.convert.CassandraConverter;
 import org.springframework.data.cassandra.convert.MappingCassandraConverter;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
@@ -88,7 +87,7 @@ public class StringBasedCassandraQueryIntegrationUnitTests {
 		expected.setForceNoValues(true);
 		expected.where(QueryBuilder.eq("lastname", "Matthews"));
 
-		assertThat(actual.getQueryString(), is(expected.getQueryString()));
+		assertThat(actual.getQueryString()).isEqualTo(expected.getQueryString());
 	}
 
 	@Test
@@ -109,7 +108,7 @@ public class StringBasedCassandraQueryIntegrationUnitTests {
 		expected.setForceNoValues(true);
 		expected.where(QueryBuilder.eq("lastname", "Matthews")).and(QueryBuilder.eq("firstname", "John"));
 
-		assertThat(actual.getQueryString(), is(expected.getQueryString()));
+		assertThat(actual.getQueryString()).isEqualTo(expected.getQueryString());
 	}
 
 	/**
@@ -133,7 +132,7 @@ public class StringBasedCassandraQueryIntegrationUnitTests {
 		expected.setForceNoValues(true);
 		expected.where(QueryBuilder.eq("createdDate", com.datastax.driver.core.LocalDate.fromYearMonthDay(2010, 7, 4)));
 
-		assertThat(actual.getQueryString(), is(expected.getQueryString()));
+		assertThat(actual.getQueryString()).isEqualTo(expected.getQueryString());
 	}
 
 	private interface SampleRepository extends Repository<Person, String> {

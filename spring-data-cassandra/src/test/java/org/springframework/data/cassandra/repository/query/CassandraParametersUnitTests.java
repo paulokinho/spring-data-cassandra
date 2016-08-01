@@ -15,11 +15,11 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.lang.reflect.Method;
 
+import com.datastax.driver.core.DataType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -48,7 +48,7 @@ public class CassandraParametersUnitTests {
 		Method method = PersonRepository.class.getMethod("findByFirstname", String.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(nullValue()));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType()).isNull();
 	}
 
 	/**
@@ -60,8 +60,7 @@ public class CassandraParametersUnitTests {
 		Method method = PersonRepository.class.getMethod("findByFirstTime", String.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(notNullValue()));
-		assertThat(cassandraParameters.getParameter(0).getCassandraType().type(), is(Name.TIME));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType().type()).isEqualTo(Name.TIME);
 	}
 
 	/**
@@ -73,7 +72,7 @@ public class CassandraParametersUnitTests {
 		Method method = PersonRepository.class.getMethod("findByObject", Object.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(nullValue()));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType()).isNull();
 	}
 
 	/**
@@ -85,8 +84,7 @@ public class CassandraParametersUnitTests {
 		Method method = PersonRepository.class.getMethod("findByAnnotatedObject", Object.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(notNullValue()));
-		assertThat(cassandraParameters.getParameter(0).getCassandraType().type(), is(Name.TIME));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType().type()).isEqualTo(Name.TIME);
 	}
 
 	interface PersonRepository {

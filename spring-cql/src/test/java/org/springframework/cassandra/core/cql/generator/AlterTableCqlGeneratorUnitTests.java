@@ -15,8 +15,8 @@
  */
 package org.springframework.cassandra.core.cql.generator;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
 				.alter("lastKnownLocation", DataType.uuid());
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE addamsfamily ALTER lastknownlocation TYPE uuid;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily ALTER lastknownlocation TYPE uuid;");
 	}
 
 	/**
@@ -59,7 +59,7 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
 				.alter("lastKnownLocation", DataType.list(DataType.ascii()));
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE addamsfamily ALTER lastknownlocation TYPE list<ascii>;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily ALTER lastknownlocation TYPE list<ascii>;");
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
 				.add("gravesite", DataType.varchar());
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE addamsfamily ADD gravesite varchar;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily ADD gravesite varchar;");
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("users")
 				.add("top_places", DataType.list(DataType.ascii()));
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE users ADD top_places list<ascii>;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE users ADD top_places list<ascii>;");
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class AlterTableCqlGeneratorUnitTests {
 
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily").drop("gender");
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE addamsfamily DROP gender;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily DROP gender;");
 	}
 
 	/**
@@ -106,7 +106,7 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
 				.rename("firstname", "lastname");
 
-		assertThat(toCql(spec), is(equalTo("ALTER TABLE addamsfamily RENAME firstname TO lastname;")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily RENAME firstname TO lastname;");
 	}
 
 	/**
@@ -118,8 +118,8 @@ public class AlterTableCqlGeneratorUnitTests {
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
 				.with(TableOption.READ_REPAIR_CHANCE, 0.2f).with(TableOption.COMMENT, "A most excellent and useful table");
 
-		assertThat(toCql(spec), is(equalTo(
-				"ALTER TABLE addamsfamily WITH read_repair_chance = 0.2 AND comment = 'A most excellent and useful table';")));
+		assertThat(toCql(spec)).isEqualTo(
+				"ALTER TABLE addamsfamily WITH read_repair_chance = 0.2 AND comment = 'A most excellent and useful table';");
 	}
 
 	/**
@@ -132,8 +132,7 @@ public class AlterTableCqlGeneratorUnitTests {
 				.add("top_places", DataType.list(DataType.ascii())).add("other", DataType.list(DataType.ascii()))
 				.with(TableOption.COMMENT, "A most excellent and useful table");
 
-		assertThat(toCql(spec), is(equalTo(
-				"ALTER TABLE addamsfamily ADD top_places list<ascii> ADD other list<ascii> WITH comment = 'A most excellent and useful table';")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE addamsfamily ADD top_places list<ascii> ADD other list<ascii> WITH comment = 'A most excellent and useful table';");
 	}
 
 	/**
@@ -148,8 +147,7 @@ public class AlterTableCqlGeneratorUnitTests {
 
 		AlterTableSpecification spec = AlterTableSpecification.alterTable("users").with(TableOption.CACHING, cachingMap);
 
-		assertThat(toCql(spec),
-				is(equalTo("ALTER TABLE users WITH caching = { 'keys' : 'none', 'rows_per_partition' : '15' };")));
+		assertThat(toCql(spec)).isEqualTo("ALTER TABLE users WITH caching = { 'keys' : 'none', 'rows_per_partition' : '15' };");
 	}
 
 	private String toCql(AlterTableSpecification spec) {

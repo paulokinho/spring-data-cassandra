@@ -16,10 +16,8 @@
 
 package org.springframework.data.cassandra.convert;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.startsWith;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assume.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.data.cassandra.RowMockUtil.*;
@@ -68,13 +66,14 @@ import org.springframework.data.cassandra.mapping.PrimaryKey;
 import org.springframework.data.cassandra.mapping.PrimaryKeyClass;
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.mapping.Table;
+import org.springframework.data.util.Version;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.DataType.Name;
 import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.DataType.Name;
 import com.datastax.driver.core.querybuilder.Assignment;
 import com.datastax.driver.core.querybuilder.BuiltStatement;
 import com.datastax.driver.core.querybuilder.Clause;
@@ -83,6 +82,7 @@ import com.datastax.driver.core.querybuilder.Delete.Where;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Update;
+import com.datastax.driver.core.querybuilder.Delete.Where;
 import com.datastax.driver.core.querybuilder.Update.Assignments;
 
 /**
@@ -130,7 +130,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(withEnumColumns, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains("MINT");
 	}
 
 	/**
@@ -139,10 +139,9 @@ public class MappingCassandraConverterUnitTests {
 	@Test
 	public void insertEnumDoesNotMapToOrdinalBeforeSpring43() {
 
-		assumeThat(SpringVersion.getVersion(), not(startsWith("4.3")));
+		assumeTrue(Version.parse(SpringVersion.getVersion()).isLessThan(Version.parse("4.3")));
 
 		expectedException.expect(ConverterNotFoundException.class);
-		expectedException.expectMessage(allOf(containsString("No converter found"), containsString("java.lang.Integer")));
 
 		UnsupportedEnumToOrdinalMapping unsupportedEnumToOrdinalMapping = new UnsupportedEnumToOrdinalMapping();
 		unsupportedEnumToOrdinalMapping.setAsOrdinal(Condition.MINT);
@@ -158,7 +157,7 @@ public class MappingCassandraConverterUnitTests {
 	@Test
 	public void insertEnumMapsToOrdinalWithSpring43() {
 
-		assumeThat(SpringVersion.getVersion(), startsWith("4.3"));
+		assumeTrue(Version.parse(SpringVersion.getVersion()).isGreaterThanOrEqualTo(Version.parse("4.3")));
 
 		UnsupportedEnumToOrdinalMapping unsupportedEnumToOrdinalMapping = new UnsupportedEnumToOrdinalMapping();
 		unsupportedEnumToOrdinalMapping.setAsOrdinal(Condition.USED);
@@ -167,7 +166,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(unsupportedEnumToOrdinalMapping, insert);
 
-		assertThat(getValues(insert), hasItem((Object) Integer.valueOf(Condition.USED.ordinal())));
+		assertThat(getValues(insert)).contains((Object) Integer.valueOf(Condition.USED.ordinal()));
 	}
 
 	/**
@@ -183,7 +182,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains((Object) "MINT");
 	}
 
 	/**
@@ -202,7 +201,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains((Object) "MINT");
 	}
 
 	/**
@@ -218,7 +217,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(withEnumColumns, update);
 
-		assertThat(getAssignmentValues(update), hasItem((Object) "MINT"));
+		assertThat(getAssignmentValues(update)).contains((Object) "MINT");
 	}
 
 	/**
@@ -234,7 +233,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, update);
 
-		assertThat(getWhereValues(update), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(update)).contains((Object) "MINT");
 	}
 
 	/**
@@ -253,7 +252,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, update);
 
-		assertThat(getWhereValues(update), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(update)).contains((Object) "MINT");
 	}
 
 	/**
@@ -269,7 +268,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, where);
 
-		assertThat(getWhereValues(where), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(where)).contains((Object) "MINT");
 	}
 
 	/**
@@ -288,7 +287,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, where);
 
-		assertThat(getWhereValues(where), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(where)).contains((Object) "MINT");
 	}
 
 	/**
@@ -301,7 +300,7 @@ public class MappingCassandraConverterUnitTests {
 
 		String result = mappingCassandraConverter.readRow(String.class, rowMock);
 
-		assertThat(result, is(equalTo("foo")));
+		assertThat(result).isEqualTo("foo");
 	}
 
 	/**
@@ -314,7 +313,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Integer result = mappingCassandraConverter.readRow(Integer.class, rowMock);
 
-		assertThat(result, is(equalTo(2)));
+		assertThat(result).isEqualTo(2);
 	}
 
 	/**
@@ -327,7 +326,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Long result = mappingCassandraConverter.readRow(Long.class, rowMock);
 
-		assertThat(result, is(equalTo(2L)));
+		assertThat(result).isEqualTo(2L);
 	}
 
 	/**
@@ -340,7 +339,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Double result = mappingCassandraConverter.readRow(Double.class, rowMock);
 
-		assertThat(result, is(equalTo(2D)));
+		assertThat(result).isEqualTo(2D);
 	}
 
 	/**
@@ -353,7 +352,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Float result = mappingCassandraConverter.readRow(Float.class, rowMock);
 
-		assertThat(result, is(equalTo(2F)));
+		assertThat(result).isEqualTo(2F);
 	}
 
 	/**
@@ -366,7 +365,7 @@ public class MappingCassandraConverterUnitTests {
 
 		BigInteger result = mappingCassandraConverter.readRow(BigInteger.class, rowMock);
 
-		assertThat(result, is(equalTo(BigInteger.valueOf(2))));
+		assertThat(result).isEqualTo(BigInteger.valueOf(2));
 	}
 
 	/**
@@ -379,7 +378,7 @@ public class MappingCassandraConverterUnitTests {
 
 		BigDecimal result = mappingCassandraConverter.readRow(BigDecimal.class, rowMock);
 
-		assertThat(result, is(equalTo(BigDecimal.valueOf(2))));
+		assertThat(result).isEqualTo(BigDecimal.valueOf(2));
 	}
 
 	/**
@@ -394,7 +393,7 @@ public class MappingCassandraConverterUnitTests {
 
 		UUID result = mappingCassandraConverter.readRow(UUID.class, rowMock);
 
-		assertThat(result, is(equalTo(uuid)));
+		assertThat(result).isEqualTo(uuid);
 	}
 
 	/**
@@ -409,7 +408,7 @@ public class MappingCassandraConverterUnitTests {
 
 		InetAddress result = mappingCassandraConverter.readRow(InetAddress.class, rowMock);
 
-		assertThat(result, is(equalTo(localHost)));
+		assertThat(result).isEqualTo(localHost);
 	}
 
 	/**
@@ -425,7 +424,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Date result = mappingCassandraConverter.readRow(Date.class, rowMock);
 
-		assertThat(result, is(equalTo(date)));
+		assertThat(result).isEqualTo(date);
 	}
 
 	/**
@@ -440,7 +439,7 @@ public class MappingCassandraConverterUnitTests {
 
 		LocalDate result = mappingCassandraConverter.readRow(LocalDate.class, rowMock);
 
-		assertThat(result, is(equalTo(date)));
+		assertThat(result).isEqualTo(date);
 	}
 
 	/**
@@ -453,7 +452,7 @@ public class MappingCassandraConverterUnitTests {
 
 		Boolean result = mappingCassandraConverter.readRow(Boolean.class, rowMock);
 
-		assertThat(result, is(equalTo(true)));
+		assertThat(result).isEqualTo(true);
 	}
 
 	/**
@@ -470,9 +469,9 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithLocalDate result = mappingCassandraConverter.readRow(TypeWithLocalDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(now.getYear()));
-		assertThat(result.localDate.getMonthValue(), is(now.getMonthValue()));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(now.getYear());
+		assertThat(result.localDate.getMonthValue()).isEqualTo(now.getMonthValue());
 	}
 
 	/**
@@ -490,8 +489,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())),
-			is(true));
+		assertThat(getValues(insert)).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
 	}
 
 	/**
@@ -509,8 +507,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())),
-			is(true));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
 	}
 
 	/**
@@ -531,9 +528,8 @@ public class MappingCassandraConverterUnitTests {
 
 		List<LocalDate> dates = getListValue(insert);
 
-		assertThat(dates, is(notNullValue(List.class)));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -554,9 +550,8 @@ public class MappingCassandraConverterUnitTests {
 
 		Set<LocalDate> dates = getSetValue(insert);
 
-		assertThat(dates, is(notNullValue(Set.class)));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -571,10 +566,10 @@ public class MappingCassandraConverterUnitTests {
 		TypeWithLocalDateMappedToDate result = mappingCassandraConverter.readRow(TypeWithLocalDateMappedToDate.class,
 				rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthValue(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthValue()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
 	/**
@@ -590,7 +585,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
 	/**
@@ -606,7 +601,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -623,9 +618,9 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithLocalDate result = mappingCassandraConverter.readRow(TypeWithLocalDate.class, rowMock);
 
-		assertThat(result.localDateTime, is(notNullValue()));
-		assertThat(result.localDateTime.getYear(), is(now.getYear()));
-		assertThat(result.localDateTime.getMinute(), is(now.getMinute()));
+		assertThat(result.localDateTime).isNotNull();
+		assertThat(result.localDateTime.getYear()).isEqualTo(now.getYear());
+		assertThat(result.localDateTime.getMinute()).isEqualTo(now.getMinute());
 	}
 
 	/**
@@ -642,8 +637,8 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithInstant result = mappingCassandraConverter.readRow(TypeWithInstant.class, rowMock);
 
-		assertThat(result.instant, is(notNullValue()));
-		assertThat(result.instant.getEpochSecond(), is(instant.getEpochSecond()));
+		assertThat(result.instant).isNotNull();
+		assertThat(result.instant.getEpochSecond()).isEqualTo(instant.getEpochSecond());
 	}
 
 	/**
@@ -657,8 +652,8 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithZoneId result = mappingCassandraConverter.readRow(TypeWithZoneId.class, rowMock);
 
-		assertThat(result.zoneId, is(notNullValue()));
-		assertThat(result.zoneId.getId(), is(equalTo("Europe/Paris")));
+		assertThat(result.zoneId).isNotNull();
+		assertThat(result.zoneId.getId()).isEqualTo("Europe/Paris");
 	}
 
 	/**
@@ -673,10 +668,10 @@ public class MappingCassandraConverterUnitTests {
 		TypeWithJodaLocalDateMappedToDate result =
 			mappingCassandraConverter.readRow(TypeWithJodaLocalDateMappedToDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthOfYear(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthOfYear()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
 	/**
@@ -692,7 +687,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
 	/**
@@ -708,7 +703,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -723,10 +718,10 @@ public class MappingCassandraConverterUnitTests {
 		TypeWithThreeTenBpLocalDateMappedToDate result =
 				mappingCassandraConverter.readRow(TypeWithThreeTenBpLocalDateMappedToDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthValue(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthValue()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
 	/**
@@ -742,7 +737,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
 	/**
@@ -758,7 +753,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -777,9 +772,9 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(userToken, update);
 
-		assertThat(getAssignments(update), hasEntry("admincomment", (Object) "admin comment"));
-		assertThat(getAssignments(update), hasEntry("user_comment", (Object) "user comment"));
-		assertThat(getWherePredicates(update), hasEntry("user_id", (Object) userToken.getUserId()));
+		assertThat(getAssignments(update)).containsEntry("admincomment", "admin comment");
+		assertThat(getAssignments(update)).containsEntry("user_comment", "user comment");
+		assertThat(getWherePredicates(update)).containsEntry("user_id", userToken.getUserId());
 	}
 
 	/**
@@ -798,7 +793,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(userToken, delete.where());
 
-		assertThat(getWherePredicates(delete), hasEntry("user_id", (Object) userToken.getUserId()));
+		assertThat(getWherePredicates(delete)).containsEntry("user_id", userToken.getUserId());
 	}
 
 	/**
@@ -811,7 +806,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write("42", delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
 	/**
@@ -827,7 +822,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(person, delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
 	/**
@@ -851,7 +846,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(id("id", "42"), delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
 	/**
@@ -869,8 +864,8 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(entity, delete.where(),
 				mappingContext.getPersistentEntity(TypeWithCompositeKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -884,8 +879,8 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithCompositeKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -902,8 +897,8 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(entity, delete.where(), mappingContext.getPersistentEntity(TypeWithMapId.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -916,7 +911,7 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(Condition.MINT, delete.where(), mappingContext.getPersistentEntity(EnumPrimaryKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("condition", (Object) "MINT"));
+		assertThat(getWherePredicates(delete)).containsEntry("condition", "MINT");
 	}
 
 	/**
@@ -930,8 +925,8 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithMapId.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -951,8 +946,8 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(entity, delete.where(), mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -981,8 +976,8 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, delete.where(), mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**
@@ -996,8 +991,8 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
 	/**

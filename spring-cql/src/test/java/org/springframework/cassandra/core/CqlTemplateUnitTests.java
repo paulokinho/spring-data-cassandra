@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Iterator;
@@ -54,13 +53,11 @@ import com.datastax.driver.core.querybuilder.Select;
 @SuppressWarnings("unchecked")
 public class CqlTemplateUnitTests {
 
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
+	@Rule public ExpectedException exception = ExpectedException.none();
 
 	private CqlTemplate template;
 
-	@Mock
-	private Session mockSession;
+	@Mock private Session mockSession;
 
 	@Before
 	public void setup() {
@@ -71,13 +68,14 @@ public class CqlTemplateUnitTests {
 	@Test
 	public void doExecuteInSessionCallbackIsCalled() {
 		String result = template.doExecute(new SessionCallback<String>() {
-			@Override public String doInSession(Session session) throws DataAccessException {
+			@Override
+			public String doInSession(Session session) throws DataAccessException {
 				session.execute("test");
 				return "test";
 			}
 		});
 
-		assertThat(result, is(equalTo("test")));
+		assertThat(result).isEqualTo("test");
 
 		verify(mockSession, times(1)).execute(eq("test"));
 	}
@@ -91,7 +89,8 @@ public class CqlTemplateUnitTests {
 		exception.expectCause(org.hamcrest.Matchers.isA(ReadTimeoutException.class));
 
 		template.doExecute(new SessionCallback<String>() {
-			@Override public String doInSession(Session session) throws DataAccessException {
+			@Override
+			public String doInSession(Session session) throws DataAccessException {
 				throw new ReadTimeoutException(ConsistencyLevel.ALL, 0, 1, true);
 			}
 		});
@@ -102,15 +101,17 @@ public class CqlTemplateUnitTests {
 	 */
 	@Test
 	public void doExecuteInSessionCallbackTranslatesToCassandraUncategorizedException() {
-		exception.expect(CassandraUncategorizedException.class);
-		exception.expectCause(org.hamcrest.Matchers.isA(DriverException.class));
-		exception.expectMessage(containsString("test"));
 
-		template.doExecute(new SessionCallback<String>() {
-			@Override public String doInSession(Session session) throws DataAccessException {
-				throw new DriverException("test");
-			}
-		});
+		try {
+			template.doExecute(new SessionCallback<String>() {
+				@Override public String doInSession(Session session) throws DataAccessException {
+					throw new DriverException("test");
+				}
+			});
+			fail("Missing CassandraUncategorizedException");
+		} catch (CassandraUncategorizedException e) {
+			assertThat(e).hasMessageContaining("test").hasRootCauseInstanceOf(DriverException.class);
+		}
 	}
 
 	/**
@@ -118,24 +119,29 @@ public class CqlTemplateUnitTests {
 	 */
 	@Test
 	public void doExecuteInSessionCallbackTranslatesToCassandraUncategorizedDataAccessException() {
-		exception.expect(CassandraUncategorizedDataAccessException.class);
-		exception.expectCause(org.hamcrest.Matchers.isA(Error.class));
-		exception.expectMessage(containsString("test"));
 
-		template.doExecute(new SessionCallback<String>() {
-			@Override public String doInSession(Session session) throws DataAccessException {
-				throw new Error("test");
-			}
-		});
+		try {
+			template.doExecute(new SessionCallback<String>() {
+				@Override
+				public String doInSession(Session session) throws DataAccessException {
+					throw new Error("test");
+				}
+			});
+			fail("Missing CassandraUncategorizedException");
+		} catch (CassandraUncategorizedDataAccessException e) {
+			assertThat(e).hasMessageContaining("test").hasCauseInstanceOf(Error.class);
+		}
 	}
 
 	@Test
 	public void doExecuteWithNullSessionCallbackThrowsIllegalArgumentException() {
-		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
-		exception.expectMessage("SessionCallback must not be null");
 
-		template.doExecute((SessionCallback) null);
+		try {
+			template.doExecute((SessionCallback) null);
+			fail("Missing IllegalArgumentException");
+		} catch (IllegalArgumentException e) {
+			assertThat(e).hasMessageContaining("SessionCallback must not be null");
+		}
 	}
 
 	@Test
@@ -146,7 +152,7 @@ public class CqlTemplateUnitTests {
 
 		ResultSet resultSet = template.doExecuteQueryReturnResultSet("SELECT * FROM Customers");
 
-		assertThat(resultSet, is(equalTo(mockResultSet)));
+		assertThat(resultSet).isEqualTo(mockResultSet);
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Customers"));
 		verifyZeroInteractions(mockResultSet);
@@ -161,7 +167,7 @@ public class CqlTemplateUnitTests {
 
 		ResultSet resultSet = template.doExecuteQueryReturnResultSet(mockSelect);
 
-		assertThat(resultSet, is(equalTo(mockResultSet)));
+		assertThat(resultSet).isEqualTo(mockResultSet);
 
 		verify(mockSession, times(1)).execute(eq(mockSelect));
 		verifyZeroInteractions(mockResultSet);
@@ -186,14 +192,14 @@ public class CqlTemplateUnitTests {
 		template = new CqlTemplate() {
 			@Override
 			<T> T columnToObject(Row row, ColumnDefinitions.Definition columnDefinition) {
-				assertThat(row, is(sameInstance(mockRow)));
-				assertThat(columnDefinition, is(sameInstance(mockColumnDefinition)));
 
+				assertThat(row).isSameAs(mockRow);
+				assertThat(columnDefinition).isSameAs(mockColumnDefinition);
 				return (T) "test";
 			}
 		};
 
-		assertThat(String.valueOf(template.firstColumnToObject(mockRow)), is(equalTo("test")));
+		assertThat(String.valueOf(template.firstColumnToObject(mockRow))).isEqualTo("test");
 
 		verify(mockRow, times(1)).getColumnDefinitions();
 		verify(mockColumnDefinitions, times(1)).iterator();
@@ -216,7 +222,7 @@ public class CqlTemplateUnitTests {
 		when(mockColumnDefinitions.iterator()).thenReturn(mockIterator);
 		when(mockIterator.hasNext()).thenReturn(false);
 
-		assertThat(template.firstColumnToObject(mockRow), is(nullValue(Object.class)));
+		assertThat(template.firstColumnToObject(mockRow)).isNull();
 
 		verify(mockRow, times(1)).getColumnDefinitions();
 		verify(mockColumnDefinitions, times(1)).iterator();
@@ -238,7 +244,7 @@ public class CqlTemplateUnitTests {
 		when(mockResultSet.isExhausted()).thenReturn(true);
 		when(mockRowMapper.mapRow(eq(mockRow), eq(0))).thenReturn("test");
 
-		assertThat(template.processOne(mockResultSet, mockRowMapper), is(equalTo("test")));
+		assertThat(template.processOne(mockResultSet, mockRowMapper)).isEqualTo("test");
 
 		verify(mockResultSet, times(1)).one();
 		verify(mockResultSet, times(1)).isExhausted();
@@ -258,12 +264,11 @@ public class CqlTemplateUnitTests {
 		when(mockResultSet.one()).thenReturn(null);
 
 		try {
-			exception.expect(IncorrectResultSizeDataAccessException.class);
-			exception.expectCause(is(nullValue(Throwable.class)));
-			exception.expectMessage(containsString("expected 1, actual 0"));
 
 			template.processOne(mockResultSet, mockRowMapper);
-
+			fail("Missing IncorrectResultSizeDataAccessException");
+		} catch (IncorrectResultSizeDataAccessException e) {
+			assertThat(e).hasMessageContaining("expected 1, actual 0");
 		} finally {
 			verify(mockResultSet, times(1)).one();
 			verify(mockResultSet, never()).isExhausted();
@@ -285,12 +290,10 @@ public class CqlTemplateUnitTests {
 		when(mockResultSet.isExhausted()).thenReturn(false);
 
 		try {
-			exception.expect(IncorrectResultSizeDataAccessException.class);
-			exception.expectCause(is(nullValue(Throwable.class)));
-			exception.expectMessage("ResultSet size exceeds 1");
-
 			template.processOne(mockResultSet, mockRowMapper);
-
+			fail("Missing IncorrectResultSizeDataAccessException");
+		} catch (IncorrectResultSizeDataAccessException e) {
+			assertThat(e).hasMessage("ResultSet size exceeds 1");
 		} finally {
 			verify(mockResultSet, times(1)).one();
 			verify(mockResultSet, times(1)).isExhausted();
@@ -309,8 +312,6 @@ public class CqlTemplateUnitTests {
 
 		try {
 			exception.expect(IllegalArgumentException.class);
-			exception.expectCause(is(nullValue(Throwable.class)));
-
 			template.processOne(null, mockRowMapper);
 		} finally {
 			verifyZeroInteractions(mockRowMapper);
@@ -332,15 +333,14 @@ public class CqlTemplateUnitTests {
 		template = new CqlTemplate() {
 			@Override
 			protected Object firstColumnToObject(Row row) {
-				assertThat(row, is(equalTo(mockRow)));
+				assertThat(row).isEqualTo(mockRow);
 				return 1L;
 			}
 		};
 
 		Number value = template.processOne(mockResultSet, Long.class);
 
-		assertThat(value, is(instanceOf(Long.class)));
-		assertThat(value.longValue(), is(equalTo(1L)));
+		assertThat(value).isInstanceOf(Long.class).isEqualTo(1L);
 
 		verify(mockResultSet, times(1)).one();
 		verify(mockResultSet, times(1)).isExhausted();
@@ -358,12 +358,10 @@ public class CqlTemplateUnitTests {
 		when(mockResultSet.one()).thenReturn(null);
 
 		try {
-			exception.expect(IncorrectResultSizeDataAccessException.class);
-			exception.expectCause(is(nullValue(Throwable.class)));
-			exception.expectMessage(containsString("expected 1, actual 0"));
-
 			template.processOne(mockResultSet, Integer.class);
-
+			fail("Missing IncorrectResultSizeDataAccessException");
+		} catch (IncorrectResultSizeDataAccessException e) {
+			assertThat(e).hasMessageContaining("expected 1, actual 0");
 		} finally {
 			verify(mockResultSet, times(1)).one();
 			verify(mockResultSet, never()).isExhausted();
@@ -383,12 +381,11 @@ public class CqlTemplateUnitTests {
 		when(mockResultSet.isExhausted()).thenReturn(false);
 
 		try {
-			exception.expect(IncorrectResultSizeDataAccessException.class);
-			exception.expectCause(is(nullValue(Throwable.class)));
-			exception.expectMessage(containsString("ResultSet size exceeds 1"));
-
 			template.processOne(mockResultSet, Double.class);
+			fail("Missing IncorrectResultSizeDataAccessException");
 
+		} catch (IncorrectResultSizeDataAccessException e) {
+			assertThat(e).hasMessageContaining("ResultSet size exceeds 1");
 		} finally {
 			verify(mockResultSet, times(1)).one();
 			verify(mockResultSet, times(1)).isExhausted();
@@ -402,7 +399,6 @@ public class CqlTemplateUnitTests {
 	@Test
 	public void processOneWithRequiredTypePassingNullResultSetThrowsIllegalArgumentException() {
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 
 		template.processOne(null, String.class);
 	}

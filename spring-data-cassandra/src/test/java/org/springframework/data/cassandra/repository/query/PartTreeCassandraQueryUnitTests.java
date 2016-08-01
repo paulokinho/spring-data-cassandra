@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
@@ -72,7 +71,7 @@ public class PartTreeCassandraQueryUnitTests {
 	public void shouldDeriveSimpleQuery() {
 		String query = deriveQueryFromMethod("findByLastname", "foo");
 
-		assertThat(query, is(equalTo("SELECT * FROM person WHERE lastname='foo';")));
+		assertThat(query).isEqualTo("SELECT * FROM person WHERE lastname='foo';");
 	}
 
 	/**
@@ -82,7 +81,7 @@ public class PartTreeCassandraQueryUnitTests {
 	public void shouldDeriveSimpleQueryWithoutNames() {
 		String query = deriveQueryFromMethod("findPersonBy");
 
-		assertThat(query, is(equalTo("SELECT * FROM person;")));
+		assertThat(query).isEqualTo("SELECT * FROM person;");
 	}
 
 	/**
@@ -92,7 +91,7 @@ public class PartTreeCassandraQueryUnitTests {
 	public void shouldDeriveAndQuery() {
 		String query = deriveQueryFromMethod("findByFirstnameAndLastname", "foo", "bar" );
 
-		assertThat(query, is(equalTo("SELECT * FROM person WHERE firstname='foo' AND lastname='bar';")));
+		assertThat(query).isEqualTo("SELECT * FROM person WHERE firstname='foo' AND lastname='bar';");
 	}
 
 	/**
@@ -102,7 +101,7 @@ public class PartTreeCassandraQueryUnitTests {
 	public void usesDynamicProjection() {
 		String query = deriveQueryFromMethod("findDynamicallyProjectedBy", PersonProjection.class);
 
-		assertThat(query, is(equalTo("SELECT * FROM person;")));
+		assertThat(query).isEqualTo("SELECT * FROM person;");
 	}
 
 

@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.mapping;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class BasicCassandraPersistentEntityUnitTests {
 
 		BasicCassandraPersistentEntity<Notification> entity = new BasicCassandraPersistentEntity<Notification>(
 				ClassTypeInformation.from(Notification.class));
-		assertThat(entity.getTableName().toCql(), is("messages"));
+		assertThat(entity.getTableName().toCql()).isEqualTo("messages");
 	}
 
 	@Test
@@ -51,7 +50,7 @@ public class BasicCassandraPersistentEntityUnitTests {
 		BasicCassandraPersistentEntity<Area> entity = new BasicCassandraPersistentEntity<Area>(
 				ClassTypeInformation.from(Area.class));
 		entity.setApplicationContext(context);
-		assertThat(entity.getTableName().toCql(), is("a123"));
+		assertThat(entity.getTableName().toCql()).isEqualTo("a123");
 	}
 
 	@Test
@@ -67,7 +66,7 @@ public class BasicCassandraPersistentEntityUnitTests {
 				ClassTypeInformation.from(UserLine.class));
 		entity.setApplicationContext(context);
 
-		assertThat(entity.getTableName().toCql(), is(bean.tableName));
+		assertThat(entity.getTableName().toCql()).isEqualTo(bean.tableName);
 	}
 
 	@Table("messages")

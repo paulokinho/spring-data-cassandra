@@ -16,8 +16,7 @@
 
 package org.springframework.data.cassandra.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
@@ -93,9 +92,7 @@ public class CassandraTemplateUnitTests {
 		List<Integer> results = template.select("SELECT * FROM Test",
 			newRollCallback(mockCassandraConverter, Integer.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.size(), is(equalTo(3)));
-		assertThat(results.containsAll(Arrays.asList(1, 2, 3)), is(true));
+		assertThat(results).isNotNull().hasSize(3).contains(1, 2, 3);
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verify(mockResultSet, times(1)).iterator();
@@ -121,9 +118,7 @@ public class CassandraTemplateUnitTests {
 		List<String> results = template.select(mockSelect,
 			newRollCallback(mockCassandraConverter, String.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.size(), is(equalTo(1)));
-		assertThat(results, hasItem("test"));
+		assertThat(results).hasSize(1).contains("test");
 
 		verify(mockSession, times(1)).execute(eq(mockSelect));
 		verify(mockResultSet, times(1)).iterator();
@@ -144,8 +139,8 @@ public class CassandraTemplateUnitTests {
 		List<Object> results = template.select("SELECT * FROM Test",
 			newRollCallback(mockCassandraConverter, Object.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.isEmpty(), is(true));
+		assertThat(results).isNotNull();
+		assertThat(results.isEmpty()).isTrue();
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verify(mockResultSet, times(1)).iterator();
@@ -164,8 +159,8 @@ public class CassandraTemplateUnitTests {
 		List<Object> results = template.select("SELECT * FROM Test",
 			newRollCallback(mockCassandraConverter, Object.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.isEmpty(), is(true));
+		assertThat(results).isNotNull();
+		assertThat(results.isEmpty()).isTrue();
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verifyZeroInteractions(mockCassandraConverter);

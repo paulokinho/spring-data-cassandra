@@ -16,8 +16,8 @@
 
 package org.springframework.cassandra.core.util;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,13 +41,13 @@ public class CollectionUtilsUnitTests {
 	}
 
 	void assertNonNullEmptyArray(Object[] array) {
-		assertThat(array, is(notNullValue()));
-		assertThat(array.length, is(equalTo(0)));
+		assertThat(array).isNotNull();
+		assertThat(array.length).isEqualTo(0);
 	}
 
 	void assertNonNullEmptyCollection(Collection<?> collection) {
-		assertThat(collection, is(notNullValue()));
-		assertThat(collection.isEmpty(), is(true));
+		assertThat(collection).isNotNull();
+		assertThat(collection.isEmpty()).isTrue();
 	}
 
 	<T> Iterable<T> newIterable(final T... elements) {
@@ -75,12 +75,12 @@ public class CollectionUtilsUnitTests {
 	public void toArrayWithIterable() {
 		Object[] array = CollectionUtils.toArray(newIterable(1, 2, 3));
 
-		assertThat(array, is(notNullValue()));
-		assertThat(array.length, is(equalTo(3)));
+		assertThat(array).isNotNull();
+		assertThat(array.length).isEqualTo(3);
 
 		for (int index = 0; index < array.length; index++) {
 			Object valueAtIndex = (index + 1);
-			assertThat(array[index], is(equalTo(valueAtIndex)));
+			assertThat(array[index]).isEqualTo(valueAtIndex);
 		}
 	}
 
@@ -98,9 +98,9 @@ public class CollectionUtilsUnitTests {
 	public void toListWithArray() {
 		List<String> list = CollectionUtils.toList("test", "testing", "tested");
 
-		assertThat(list, is(notNullValue()));
-		assertThat(list.size(), is(equalTo(3)));
-		assertThat(list.containsAll(asList("test", "testing", "tested")), is(true));
+		assertThat(list).isNotNull();
+		assertThat(list).hasSize(3);
+		assertThat(list.containsAll(asList("test", "testing", "tested"))).isTrue();
 	}
 
 	@Test
@@ -118,9 +118,9 @@ public class CollectionUtilsUnitTests {
 	public void toListWithIterable() {
 		List<Integer> list = CollectionUtils.toList(newIterable(1, 2, 3));
 
-		assertThat(list, is(notNullValue()));
-		assertThat(list.size(), is(equalTo(3)));
-		assertThat(list.containsAll(asList(1, 2, 3)), is(true));
+		assertThat(list).isNotNull();
+		assertThat(list).hasSize(3);
+		assertThat(list.containsAll(asList(1, 2, 3))).isTrue();
 	}
 
 	@Test
@@ -128,7 +128,7 @@ public class CollectionUtilsUnitTests {
 		List<Integer> expected = asList(1, 2, 3);
 		List<Integer> actual = CollectionUtils.toList(expected);
 
-		assertThat(actual, is(sameInstance(expected)));
+		assertThat(actual).isSameAs(expected);
 	}
 
 	@Test

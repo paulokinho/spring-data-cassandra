@@ -15,7 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.core;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -105,7 +105,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		 * There must be 1 node in the cluster if the embedded server is
 		 * running.
 		 */
-		assertNotNull(ring);
+		assertThat(ring).isNotNull();
 	}
 
 	@Test
@@ -129,8 +129,8 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 
 		});
 
-		assertNotNull(ring);
-		assertTrue(ring.size() > 0);
+		assertThat(ring).isNotNull();
+		assertThat(ring.size() > 0).isTrue();
 
 		for (MyHost h : ring) {
 			log.info("hostMapperTest Host -> " + h.someName);
@@ -355,7 +355,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			@Override
 			public Book extractData(ResultSet rs) throws DriverException, DataAccessException {
 				Row r = rs.one();
-				assertNotNull(r);
+				assertThat(r).isNotNull();
 
 				Book b = rowToBook(r);
 
@@ -381,7 +381,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 					@Override
 					public Book extractData(ResultSet rs) throws DriverException, DataAccessException {
 						Row r = rs.one();
-						assertNotNull(r);
+						assertThat(r).isNotNull();
 
 						Book b = rowToBook(r);
 
@@ -411,7 +411,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 					@Override
 					public Book extractData(ResultSet rs) throws DriverException, DataAccessException {
 						Row r = rs.one();
-						assertNotNull(r);
+						assertThat(r).isNotNull();
 
 						Book b = rowToBook(r);
 
@@ -502,7 +502,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			@Override
 			public void processRow(Row row) throws DriverException {
 
-				assertNotNull(row);
+				assertThat(row).isNotNull();
 				Book b = rowToBook(row);
 				assertBook(b1, b);
 
@@ -525,14 +525,14 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		ResultSetFuture rsf = cqlTemplate.queryAsynchronously("select * from book where isbn='" + isbn + "'", options);
 		ResultSet rs = rsf.getUninterruptibly();
 
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		cqlTemplate.process(rs, new RowCallbackHandler() {
 
 			@Override
 			public void processRow(Row row) throws DriverException {
 
-				assertNotNull(row);
+				assertThat(row).isNotNull();
 				Book b = rowToBook(row);
 				assertBook(b1, b);
 			}
@@ -556,7 +556,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 					}
 				});
 
-		assertEquals(books.size(), 3);
+		assertThat(3).isEqualTo(books.size());
 		assertBook(books.get(0), getBook(books.get(0).getIsbn()));
 		assertBook(books.get(1), getBook(books.get(1).getIsbn()));
 		assertBook(books.get(2), getBook(books.get(2).getIsbn()));
@@ -571,7 +571,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		ResultSetFuture rsf = cqlTemplate.queryAsynchronously("select * from book where isbn in ('1234','2345','3456')");
 		ResultSet rs = rsf.getUninterruptibly();
 
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		List<Book> books = cqlTemplate.process(rs, new RowMapper<Book>() {
 
@@ -582,7 +582,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertEquals(books.size(), 3);
+		assertThat(3).isEqualTo(books.size());
 		assertBook(books.get(0), getBook(books.get(0).getIsbn()));
 		assertBook(books.get(1), getBook(books.get(1).getIsbn()));
 		assertBook(books.get(2), getBook(books.get(2).getIsbn()));
@@ -601,7 +601,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 					}
 				});
 
-		assertNotNull(book);
+		assertThat(book).isNotNull();
 		assertBook(book, getBook(ISBN_NINES));
 	}
 
@@ -633,7 +633,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		ResultSetFuture rsf = cqlTemplate.queryAsynchronously("select * from book where isbn in ('" + ISBN_NINES + "')");
 
 		ResultSet rs = rsf.getUninterruptibly();
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		Book book = cqlTemplate.processOne(rs, new RowMapper<Book>() {
 			@Override
@@ -643,7 +643,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertNotNull(book);
+		assertThat(book).isNotNull();
 		assertBook(book, getBook(ISBN_NINES));
 	}
 
@@ -653,7 +653,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		String title = cqlTemplate.queryForObject("select title from book where isbn in ('" + ISBN_NINES + "')",
 				String.class);
 
-		assertEquals(title, TITLE_NINES);
+		assertThat(TITLE_NINES).isEqualTo(title);
 
 	}
 
@@ -673,12 +673,12 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 				.queryAsynchronously("select title from book where isbn in ('" + ISBN_NINES + "')");
 
 		ResultSet rs = rsf.getUninterruptibly();
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		String title = cqlTemplate.processOne(rs, String.class);
 
-		assertNotNull(title);
-		assertEquals(title, TITLE_NINES);
+		assertThat(title).isNotNull();
+		assertThat(TITLE_NINES).isEqualTo(title);
 	}
 
 	@Test
@@ -698,7 +698,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		ResultSetFuture rsf = cqlTemplate.queryAsynchronously("select * from book where isbn in ('" + ISBN_NINES + "')");
 
 		ResultSet rs = rsf.getUninterruptibly();
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		Map<String, Object> rsMap = cqlTemplate.processMap(rs);
 
@@ -717,8 +717,8 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		List<String> titles = cqlTemplate.queryForList("select title from book where isbn in ('1234','2345','3456')",
 				String.class);
 
-		assertNotNull(titles);
-		assertEquals(titles.size(), 3);
+		assertThat(titles).isNotNull();
+		assertThat(3).isEqualTo(titles.size());
 	}
 
 	@Test
@@ -730,11 +730,11 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		ResultSetFuture rsf = cqlTemplate.queryAsynchronously("select * from book where isbn in ('1234','2345','3456')");
 		ResultSet rs = rsf.getUninterruptibly();
 
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		List<String> titles = cqlTemplate.processList(rs, String.class);
-		assertNotNull(titles);
-		assertEquals(titles.size(), 3);
+		assertThat(titles).isNotNull();
+		assertThat(3).isEqualTo(titles.size());
 	}
 
 	@Test
@@ -746,7 +746,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 		List<Map<String, Object>> results = cqlTemplate
 				.queryForListOfMap("select * from book where isbn in ('1234','2345','3456')");
 
-		assertEquals(results.size(), 3);
+		assertThat(3).isEqualTo(results.size());
 
 	}
 
@@ -760,11 +760,11 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 
 		ResultSet rs = rsf.getUninterruptibly();
 
-		assertNotNull(rs);
+		assertThat(rs).isNotNull();
 
 		List<Map<String, Object>> results = cqlTemplate.processListOfMap(rs);
 
-		assertEquals(results.size(), 3);
+		assertThat(3).isEqualTo(results.size());
 
 	}
 
@@ -782,7 +782,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertNotNull(statement);
+		assertThat(statement).isNotNull();
 
 	}
 
@@ -806,7 +806,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertNotNull(statement);
+		assertThat(statement).isNotNull();
 
 	}
 
@@ -827,7 +827,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			@Override
 			public Book extractData(ResultSet rs) throws DriverException, DataAccessException {
 				Row r = rs.one();
-				assertNotNull(r);
+				assertThat(r).isNotNull();
 
 				Book b = rowToBook(r);
 
@@ -890,7 +890,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 
 		Book b2 = getBook(isbn);
 
-		assertEquals(books.size(), 1);
+		assertThat(1).isEqualTo(books.size());
 		assertBook(books.get(0), b2);
 	}
 
@@ -922,7 +922,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertTrue(books.size() > 0);
+		assertThat(books.size() > 0).isTrue();
 	}
 
 	@Test
@@ -970,7 +970,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 			}
 		});
 
-		assertTrue(books.size() > 0);
+		assertThat(books.size() > 0).isTrue();
 	}
 
 	@Test
@@ -1007,7 +1007,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 
 		Book b2 = getBook(isbn);
 
-		assertEquals(books.size(), 1);
+		assertThat(1).isEqualTo(books.size());
 		assertBook(books.get(0), b2);
 	}
 
@@ -1069,7 +1069,7 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 
 		Book b2 = getBook(isbn);
 
-		assertEquals(books.size(), 1);
+		assertThat(1).isEqualTo(books.size());
 		assertBook(books.get(0), b2);
 	}
 
@@ -1098,10 +1098,10 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 	 */
 	private void assertBook(Book b, Object... orderedElements) {
 
-		assertEquals(b.getIsbn(), orderedElements[0]);
-		assertEquals(b.getTitle(), orderedElements[1]);
-		assertEquals(b.getAuthor(), orderedElements[2]);
-		assertEquals(b.getPages(), orderedElements[3]);
+		assertThat(orderedElements[0]).isEqualTo(b.getIsbn());
+		assertThat(orderedElements[1]).isEqualTo(b.getTitle());
+		assertThat(orderedElements[2]).isEqualTo(b.getAuthor());
+		assertThat(orderedElements[3]).isEqualTo(b.getPages());
 
 	}
 
@@ -1137,10 +1137,10 @@ public class CqlOperationsIntegrationTests extends AbstractKeyspaceCreatingInteg
 	 */
 	public static void assertBook(Book b1, Book b2) {
 
-		assertEquals(b1.getIsbn(), b2.getIsbn());
-		assertEquals(b1.getTitle(), b2.getTitle());
-		assertEquals(b1.getAuthor(), b2.getAuthor());
-		assertEquals(b1.getPages(), b2.getPages());
+		assertThat(b2.getIsbn()).isEqualTo(b1.getIsbn());
+		assertThat(b2.getTitle()).isEqualTo(b1.getTitle());
+		assertThat(b2.getAuthor()).isEqualTo(b1.getAuthor());
+		assertThat(b2.getPages()).isEqualTo(b1.getPages());
 
 	}
 

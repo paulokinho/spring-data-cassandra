@@ -15,7 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.core.async;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.cassandra.core.keyspace.CreateTableSpecification.*;
 
 import java.util.ArrayList;
@@ -41,10 +41,10 @@ import org.springframework.cassandra.core.QueryOptions;
 import org.springframework.cassandra.core.RetryPolicy;
 import org.springframework.cassandra.support.exception.CassandraConnectionFailureException;
 import org.springframework.cassandra.test.integration.AbstractKeyspaceCreatingIntegrationTest;
-import org.springframework.cassandra.test.integration.support.QueryListener;
 import org.springframework.cassandra.test.integration.support.ListOfMapListener;
 import org.springframework.cassandra.test.integration.support.MapListener;
 import org.springframework.cassandra.test.integration.support.ObjectListener;
+import org.springframework.cassandra.test.integration.support.QueryListener;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -113,8 +113,8 @@ public class AsynchronousCqlOperationsIntegrationTests extends AbstractKeyspaceC
 
 	public static void assertMapEquals(Map<?, ?> expected, Map<?, ?> actual) {
 		for (Object key : expected.keySet()) {
-			assertTrue(actual.containsKey(key));
-			assertEquals(expected.get(key), actual.get(key));
+			assertThat(actual.containsKey(key)).isTrue();
+			assertThat(actual.get(key)).isEqualTo(expected.get(key));
 		}
 	}
 
@@ -133,8 +133,8 @@ public class AsynchronousCqlOperationsIntegrationTests extends AbstractKeyspaceC
 	}
 
 	void assertBook(Book expected, Book actual) {
-		assertEquals(expected.isbn, actual.isbn);
-		assertEquals(expected.title, actual.title);
+		assertThat(actual.isbn).isEqualTo(expected.isbn);
+		assertThat(actual.title).isEqualTo(expected.title);
 	}
 
 	/**
@@ -182,7 +182,7 @@ public class AsynchronousCqlOperationsIntegrationTests extends AbstractKeyspaceC
 			if (listener.getException() != null) {
 				throw listener.getException();
 			}
-			assertEquals(expected, listener.getResult());
+			assertThat(listener.getResult()).isEqualTo(expected);
 		}
 	}
 

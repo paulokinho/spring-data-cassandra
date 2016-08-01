@@ -15,8 +15,8 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
@@ -68,7 +68,10 @@ public class ConvertingParameterAccessorUnitTests {
 	 */
 	@Test
 	public void shouldReturnNullBindableValue() {
-		assertThat(convertingParameterAccessor.getBindableValue(0), is(nullValue()));
+
+		ConvertingParameterAccessor accessor = new ConvertingParameterAccessor(converter, mockParameterAccessor);
+
+		assertThat(accessor.getBindableValue(0)).isNull();
 	}
 
 	/**
@@ -81,7 +84,12 @@ public class ConvertingParameterAccessorUnitTests {
 		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) String.class);
 
-		assertThat(convertingParameterAccessor.getBindableValue(0), is(equalTo((Object) "hello")));
+		ConvertingParameterAccessor accessor = new ConvertingParameterAccessor(converter, mockParameterAccessor);
+
+		when(mockParameterAccessor.getBindableValue(0)).thenReturn("hello");
+		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
+
+		assertThat(accessor.getBindableValue(0)).isEqualTo((Object) "hello");
 	}
 
 	/**
@@ -95,8 +103,7 @@ public class ConvertingParameterAccessorUnitTests {
 		when(mockParameterAccessor.getBindableValue(0)).thenReturn(localDate);
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) LocalDate.class);
 
-		assertThat(convertingParameterAccessor.getBindableValue(0),
-			is(equalTo((Object) com.datastax.driver.core.LocalDate.fromYearMonthDay(2010, 7, 4))));
+		assertThat(convertingParameterAccessor.getBindableValue(0)).isEqualTo(com.datastax.driver.core.LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
 	/**
@@ -107,7 +114,7 @@ public class ConvertingParameterAccessorUnitTests {
 	public void shouldReturnDataTypeProvidedByDelegate() {
 		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
 
-		assertThat(convertingParameterAccessor.getDataType(0), is(equalTo(DataType.varchar())));
+		assertThat(convertingParameterAccessor.getDataType(0)).isEqualTo(DataType.varchar());
 	}
 
 	/**
@@ -130,11 +137,11 @@ public class ConvertingParameterAccessorUnitTests {
 		PotentiallyConvertingIterator iterator = (PotentiallyConvertingIterator) convertingParameterAccessor.iterator();
 		Object converted = iterator.nextConverted(mockProperty);
 
-		assertThat(converted, is(instanceOf(List.class)));
+		assertThat(converted).isInstanceOf(List.class);
 
 		List<?> list = (List<?>) converted;
 
-		assertThat(list.get(0), is(instanceOf(com.datastax.driver.core.LocalDate.class)));
+		assertThat(list.get(0)).isInstanceOf(com.datastax.driver.core.LocalDate.class);
 	}
 
 	/**
@@ -146,7 +153,7 @@ public class ConvertingParameterAccessorUnitTests {
 		when(mockParameterAccessor.getDataType(0)).thenReturn(null);
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) LocalDate.class);
 
-		assertThat(convertingParameterAccessor.getDataType(0), is(equalTo(DataType.date())));
+		assertThat(convertingParameterAccessor.getDataType(0)).isEqualTo(DataType.date());
 	}
 
 	/**
@@ -160,6 +167,6 @@ public class ConvertingParameterAccessorUnitTests {
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) String.class);
 		when(mockParameterAccessor.getDataType(0)).thenReturn(null);
 
-		assertThat(convertingParameterAccessor.getDataType(0, mockProperty), is(equalTo(DataType.varchar())));
+		assertThat(convertingParameterAccessor.getDataType(0, mockProperty)).isEqualTo(DataType.varchar());
 	}
 }

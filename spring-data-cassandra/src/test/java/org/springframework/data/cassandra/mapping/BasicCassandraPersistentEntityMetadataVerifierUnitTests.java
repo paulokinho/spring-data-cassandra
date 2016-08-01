@@ -15,7 +15,7 @@
  */
 package org.springframework.data.cassandra.mapping;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.io.Serializable;
 
@@ -91,7 +91,7 @@ public class BasicCassandraPersistentEntityMetadataVerifierUnitTests {
 
 		CassandraPersistentEntity<?> entity = mappingContext.getPersistentEntity(OnePkc.class);
 
-		assertNull(entity.getIdProperty());
+		assertThat(entity.getIdProperty()).isNull();
 	}
 
 	@Test
@@ -99,7 +99,7 @@ public class BasicCassandraPersistentEntityMetadataVerifierUnitTests {
 
 		CassandraPersistentEntity<?> entity = mappingContext.getPersistentEntity(MultiPkc.class);
 
-		assertNull(entity.getIdProperty());
+		assertThat(entity.getIdProperty()).isNull();
 	}
 
 	static class NonPersistentClass {

@@ -16,8 +16,8 @@
 
 package org.springframework.data.cassandra.mapping;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.Test;
@@ -44,29 +44,29 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 
 	@Test
 	public void leftAndRightAreNullReturnsZero() {
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(null, null), is(equalTo(0)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(null, null)).isEqualTo(0);
 		verifyZeroInteractions(left);
 		verifyZeroInteractions(right);
 	}
 
 	@Test
 	public void leftIsNotNullAndRightIsNullReturnsOne() {
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, null), is(equalTo(1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, null)).isEqualTo(1);
 		verifyZeroInteractions(left);
 		verifyZeroInteractions(right);
 	}
 
 	@Test
 	public void leftIsNullAndRightIsNotNullReturnsMinusOne() {
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(null, right), is(equalTo(-1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(null, right)).isEqualTo(-1);
 		verifyZeroInteractions(left);
 		verifyZeroInteractions(right);
 	}
 
 	@Test
 	public void leftAndRightAreEqualReturnsZero() {
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, left), is(equalTo(0)));
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(right, right), is(equalTo(0)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, left)).isEqualTo(0);
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(right, right)).isEqualTo(0);
 		verifyZeroInteractions(left);
 		verifyZeroInteractions(right);
 	}
@@ -76,7 +76,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(left.isCompositePrimaryKey()).thenReturn(true);
 		when(right.isCompositePrimaryKey()).thenReturn(true);
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(equalTo(0)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isEqualTo(0);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(right, times(1)).isCompositePrimaryKey();
@@ -89,7 +89,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(right.isCompositePrimaryKey()).thenReturn(false);
 		when(right.isPrimaryKeyColumn()).thenReturn(false);
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(equalTo(-1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isEqualTo(-1);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(left, times(1)).isPrimaryKeyColumn();
@@ -104,7 +104,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(right.isCompositePrimaryKey()).thenReturn(false);
 		when(right.isPrimaryKeyColumn()).thenReturn(false);
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(equalTo(-1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isEqualTo(-1);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(left, times(1)).isPrimaryKeyColumn();
@@ -119,7 +119,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(right.isCompositePrimaryKey()).thenReturn(true);
 		when(right.isPrimaryKeyColumn()).thenReturn(false);
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(equalTo(1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isEqualTo(1);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(left, times(1)).isPrimaryKeyColumn();
@@ -134,7 +134,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(right.isCompositePrimaryKey()).thenReturn(false);
 		when(right.isPrimaryKeyColumn()).thenReturn(true);
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(equalTo(1)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isEqualTo(1);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(left, times(1)).isPrimaryKeyColumn();
@@ -153,7 +153,7 @@ public class CassandraPersistentPropertyComparatorUnitTests {
 		when(left.getName()).thenReturn("left");
 		when(right.getName()).thenReturn("right");
 
-		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right), is(lessThan(0)));
+		assertThat(CassandraPersistentPropertyComparator.IT.compare(left, right)).isLessThan(0);
 
 		verify(left, times(1)).isCompositePrimaryKey();
 		verify(left, times(1)).isPrimaryKeyColumn();

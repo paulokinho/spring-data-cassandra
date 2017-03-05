@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.isolated;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -48,7 +47,6 @@ import com.datastax.driver.core.LocalDate;
  * Integration tests for various return types on a Cassandra repository.
  *
  * @author Mark Paluch
- * @see DATACASS-271
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -78,38 +76,29 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.deleteAll();
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnOptional() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
 		allPossibleTypesRepository.save(entity);
 
 		Optional<AllPossibleTypes> result = allPossibleTypesRepository.findOptionalById(entity.getId());
-		assertThat(result.isPresent(), is(true));
-		assertThat(result.get(), is(instanceOf(AllPossibleTypes.class)));
+		assertThat(result.isPresent()).isTrue();
+		assertThat(result.get()).isInstanceOf(AllPossibleTypes.class);
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnList() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
 		allPossibleTypesRepository.save(entity);
 
 		List<AllPossibleTypes> result = allPossibleTypesRepository.findManyById(entity.getId());
-		assertThat(result.isEmpty(), is(false));
-		assertThat(result, hasItem(entity));
+		assertThat(result.isEmpty()).isFalse();
+		assertThat(result).contains(entity);
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnInetAddress() throws UnknownHostException {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -117,13 +106,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		InetAddress result = allPossibleTypesRepository.findInetAddressById(entity.getId());
-		assertThat(result, is(equalTo(entity.getInet())));
+		assertThat(result).isEqualTo(entity.getInet());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnOptionalInetAddress() throws UnknownHostException {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -131,14 +117,11 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Optional<InetAddress> result = allPossibleTypesRepository.findOptionalInetById(entity.getId());
-		assertThat(result.isPresent(), is(true));
-		assertThat(result.get(), is(equalTo(entity.getInet())));
+		assertThat(result.isPresent()).isTrue();
+		assertThat(result.get()).isEqualTo(entity.getInet());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedByte() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -146,13 +129,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Byte result = allPossibleTypesRepository.findBoxedByteById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedByte())));
+		assertThat(result).isEqualTo(entity.getBoxedByte());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnPrimitiveByte() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -160,13 +140,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		byte result = allPossibleTypesRepository.findPrimitiveByteById(entity.getId());
-		assertThat(result, is(equalTo(entity.getPrimitiveByte())));
+		assertThat(result).isEqualTo(entity.getPrimitiveByte());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedShort() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -174,13 +151,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Short result = allPossibleTypesRepository.findBoxedShortById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedShort())));
+		assertThat(result).isEqualTo(entity.getBoxedShort());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedLong() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -188,13 +162,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Long result = allPossibleTypesRepository.findBoxedLongById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedLong())));
+		assertThat(result).isEqualTo(entity.getBoxedLong());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedInteger() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -202,13 +173,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Integer result = allPossibleTypesRepository.findBoxedIntegerById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedInteger())));
+		assertThat(result).isEqualTo(entity.getBoxedInteger());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedDouble() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -216,13 +184,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Double result = allPossibleTypesRepository.findBoxedDoubleById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedDouble())));
+		assertThat(result).isEqualTo(entity.getBoxedDouble());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedDoubleFromInteger() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -230,13 +195,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Double result = allPossibleTypesRepository.findDoubleFromIntegerById(entity.getId());
-		assertThat(result, is(closeTo(entity.getBoxedInteger(), 0.01d)));
+		assertThat(result).isCloseTo(entity.getBoxedInteger(), offset(0.01d));
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBoxedBoolean() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -244,13 +206,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Boolean result = allPossibleTypesRepository.findBoxedBooleanById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBoxedBoolean())));
+		assertThat(result).isEqualTo(entity.getBoxedBoolean());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnDate() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -258,13 +217,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		LocalDate result = allPossibleTypesRepository.findLocalDateById(entity.getId());
-		assertThat(result, is(equalTo(entity.getDate())));
+		assertThat(result).isEqualTo(entity.getDate());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnTimestamp() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -272,13 +228,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Date result = allPossibleTypesRepository.findTimestampById(entity.getId());
-		assertThat(result, is(equalTo(entity.getTimestamp())));
+		assertThat(result).isEqualTo(entity.getTimestamp());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBigDecimal() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -286,13 +239,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		BigDecimal result = allPossibleTypesRepository.findBigDecimalById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBigDecimal())));
+		assertThat(result).isEqualTo(entity.getBigDecimal());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnBigInteger() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -300,13 +250,10 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		BigInteger result = allPossibleTypesRepository.findBigIntegerById(entity.getId());
-		assertThat(result, is(equalTo(entity.getBigInteger())));
+		assertThat(result).isEqualTo(entity.getBigInteger());
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReturnEntityAsMap() {
 
 		AllPossibleTypes entity = new AllPossibleTypes("123");
@@ -315,9 +262,9 @@ public class RepositoryReturnTypesIntegrationTests extends AbstractSpringDataEmb
 		allPossibleTypesRepository.save(entity);
 
 		Map<String, Object> result = allPossibleTypesRepository.findEntityAsMapById(entity.getId());
-		assertThat(result.size(), is(41));
-		assertThat(result.get("primitiveinteger"), is(equalTo((Object) Integer.valueOf(123))));
-		assertThat(result.get("biginteger"), is(equalTo((Object) BigInteger.ONE)));
+		assertThat(result).hasSize(41);
+		assertThat(result.get("primitiveinteger")).isEqualTo((Object) Integer.valueOf(123));
+		assertThat(result.get("biginteger")).isEqualTo((Object) BigInteger.ONE);
 	}
 
 	public interface AllPossibleTypesRepository extends CrudRepository<AllPossibleTypes, String> {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,22 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.querymethods.declared;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.cassandra.core.PrimaryKeyType;
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.mapping.Table;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * Sample domain class.
+ * 
+ * @author Mark Paluch
  */
 @Table
 @Data
@@ -45,6 +48,9 @@ public class Person {
 
 	private LocalDate createdDate;
 	private ZoneId zoneId;
+
+	private Address mainAddress;
+	private List<Address> alternativeAddresses;
 
 	public Person(String firstname, String lastname) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.cassandra.core.cql.generator;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,20 +39,20 @@ public class AlterKeyspaceCqlGeneratorUnitTests {
 	 * Asserts that the preamble is first & correctly formatted in the given CQL string.
 	 */
 	public static void assertPreamble(String tableName, String cql) {
-		assertTrue(cql.startsWith("ALTER KEYSPACE " + tableName + " "));
+		assertThat(cql.startsWith("ALTER KEYSPACE " + tableName + " ")).isTrue();
 	}
 
 	private static void assertReplicationMap(Map<Option, Object> replicationMap, String cql) {
-		assertTrue(cql.contains(" WITH replication = { "));
+		assertThat(cql.contains(" WITH replication = { ")).isTrue();
 
 		for (Map.Entry<Option, Object> entry : replicationMap.entrySet()) {
 			String keyValuePair = "'" + entry.getKey().getName() + "' : '" + entry.getValue().toString() + "'";
-			assertTrue(cql.contains(keyValuePair));
+			assertThat(cql.contains(keyValuePair)).isTrue();
 		}
 	}
 
 	public static void assertDurableWrites(Boolean durableWrites, String cql) {
-		assertTrue(cql.contains(" AND durable_writes = " + durableWrites));
+		assertThat(cql.contains(" AND durable_writes = " + durableWrites)).isTrue();
 	}
 
 	/**

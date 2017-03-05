@@ -54,9 +54,17 @@ public interface CassandraParameterAccessor extends ParameterAccessor {
 
 	/**
 	 * The actual parameter type (after unwrapping).
-	 * 
+	 *
 	 * @param index the parameter index
 	 * @return the parameter type, never {@literal null}.
 	 */
 	Class<?> getParameterType(int index);
+
+	/**
+	 * Returns the raw parameter values of the underlying query method.
+	 *
+	 * @return the raw parameter values passed to the underlying query method.
+	 * @since 1.5
+	 */
+	Object[] getValues();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package org.springframework.cassandra.test.integration.config.java;
 
-import org.junit.Assert;
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.Test;
 import org.springframework.cassandra.test.integration.config.IntegrationTestUtils;
 import org.springframework.test.context.ContextConfiguration;
@@ -28,7 +29,7 @@ public class KeyspaceCreatingJavaConfigIntegrationTests extends AbstractIntegrat
 
 	@Test
 	public void test() {
-		Assert.assertNotNull(session);
+		assertThat(session).isNotNull();
 		IntegrationTestUtils.assertKeyspaceExists(KeyspaceCreatingJavaConfig.KEYSPACE_NAME, session);
 
 		session.execute("DROP KEYSPACE " + KeyspaceCreatingJavaConfig.KEYSPACE_NAME + ";");

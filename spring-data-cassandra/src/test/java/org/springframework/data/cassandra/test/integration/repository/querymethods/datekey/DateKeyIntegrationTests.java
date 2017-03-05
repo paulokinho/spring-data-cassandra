@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.querymethods.datekey;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Date;
 
@@ -62,6 +62,6 @@ public class DateKeyIntegrationTests extends AbstractSpringDataEmbeddedCassandra
 		repo.save(saved);
 
 		DateThing found = repo.findThingByDate(date);
-		assertNotNull(found);
+		assertThat(found).isNotNull();
 	}
 }

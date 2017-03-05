@@ -24,6 +24,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
@@ -37,6 +40,7 @@ import org.springframework.data.cassandra.repository.query.CassandraQueryExecuti
 import org.springframework.data.cassandra.repository.query.CassandraQueryExecution.ResultSetQuery;
 import org.springframework.data.cassandra.repository.query.CassandraQueryExecution.SingleEntityExecution;
 import org.springframework.data.cassandra.repository.query.CassandraQueryExecution.StreamExecution;
+import org.springframework.data.convert.EntityInstantiators;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
@@ -44,8 +48,7 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Base class for {@link RepositoryQuery} implementations for Cassandra.
@@ -57,8 +60,9 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 
 	protected static Logger log = LoggerFactory.getLogger(AbstractCassandraQuery.class);
 
-	private final CassandraQueryMethod queryMethod;
 	private final CassandraOperations template;
+	private final CassandraQueryMethod queryMethod;
+	private final EntityInstantiators instantiators;
 
 	/**
 	 * Creates a new {@link AbstractCassandraQuery} from the given {@link CassandraQueryMethod} and
@@ -74,6 +78,7 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 
 		this.queryMethod = queryMethod;
 		this.template = operations;
+		this.instantiators = new EntityInstantiators();
 	}
 
 	/* (non-Javadoc)
@@ -93,18 +98,17 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 		CassandraParameterAccessor parameterAccessor = new ConvertingParameterAccessor(template.getConverter(),
 				new CassandraParametersParameterAccessor(queryMethod, parameters));
 
-		String query = createQuery(parameterAccessor);
-
 		ResultProcessor resultProcessor = queryMethod.getResultProcessor().withDynamicProjection(parameterAccessor);
 
+		String query = createQuery(parameterAccessor);
+
 		CassandraQueryExecution queryExecution = getExecution(query, parameterAccessor,
-			new ResultProcessingConverter(resultProcessor));
+				new ResultProcessingConverter(resultProcessor, template.getConverter().getMappingContext(), instantiators));
 
 		CassandraReturnedType returnedType = new CassandraReturnedType(resultProcessor.getReturnedType(),
-			template.getConverter().getCustomConversions());
+				template.getConverter().getCustomConversions());
 
-		Class<?> resultType = (returnedType.isProjecting() ? returnedType.getDomainType()
-			: returnedType.getReturnedType());
+		Class<?> resultType = (returnedType.isProjecting() ? returnedType.getDomainType() : returnedType.getReturnedType());
 
 		return queryExecution.execute(query, resultType);
 	}
@@ -141,7 +145,8 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 	 * @param declaredReturnType
 	 * @param returnedUnwrappedObjectType
 	 * @return
-	 * @deprecated {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type conversion.
+	 * @deprecated as of 1.5, {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type
+	 *             conversion.
 	 */
 	@Deprecated
 	public Object getCollectionOfEntity(ResultSet resultSet, Class<?> declaredReturnType,
@@ -170,7 +175,8 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 	 * @param resultSet
 	 * @param type
 	 * @return
-	 * @deprecated {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type conversion.
+	 * @deprecated as of 1.5, {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type
+	 *             conversion.
 	 */
 	@Deprecated
 	public Object getSingleEntity(ResultSet resultSet, Class<?> type) {
@@ -183,6 +189,7 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 	}
 
 	private void warnIfMoreResults(ResultSet resultSet) {
+
 		if (log.isWarnEnabled() && !resultSet.isExhausted()) {
 			int count = 0;
 
@@ -196,11 +203,13 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 
 	@Deprecated
 	protected void warnIfMoreResults(Iterator<Row> iterator) {
+
 		if (log.isWarnEnabled() && iterator.hasNext()) {
 			int count = 0;
 
-			for ( ; iterator.hasNext(); iterator.next()) {
+			while (iterator.hasNext()) {
 				count++;
+				iterator.next();
 			}
 
 			log.warn("ignoring extra {} row{}", count, count == 1 ? "" : "s");
@@ -208,14 +217,19 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 	}
 
 	/**
-	 * @deprecated {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type conversion.
+	 * @deprecated as of 1.5, {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type
+	 *             conversion.
 	 */
 	@Deprecated
 	public void setConversionService(ConversionService conversionService) {
 		throw new UnsupportedOperationException("setConversionService(ConversionService) is not supported anymore. "
-			+ "Please use CassandraMappingContext instead");
+				+ "Please use CassandraMappingContext instead");
 	}
 
+	/**
+	 * @deprecated as of 1.5, {@link org.springframework.data.cassandra.mapping.CassandraMappingContext} handles type
+	 *             conversion.
+	 */
 	@Deprecated
 	public ConversionService getConversionService() {
 		return template.getConverter().getConversionService();
@@ -228,15 +242,11 @@ public abstract class AbstractCassandraQuery implements RepositoryQuery {
 	 */
 	protected abstract String createQuery(CassandraParameterAccessor accessor);
 
+	@RequiredArgsConstructor
 	private class CassandraReturnedType {
 
 		private final ReturnedType returnedType;
 		private final CustomConversions customConversions;
-
-		CassandraReturnedType(ReturnedType returnedType, CustomConversions customConversions) {
-			this.returnedType = returnedType;
-			this.customConversions = customConversions;
-		}
 
 		boolean isProjecting() {
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013-2016 the original author or authors
+ *  Copyright 2013-2017 the original author or authors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.springframework.data.cassandra.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
@@ -52,8 +51,7 @@ public class CassandraTemplateUnitTests {
 
 	private CassandraTemplate template;
 
-	@Mock
-	private Session mockSession;
+	@Mock private Session mockSession;
 
 	@Before
 	public void setup() {
@@ -67,14 +65,12 @@ public class CassandraTemplateUnitTests {
 	protected Row mockRow(String name) {
 		return mock(Row.class, name);
 	}
+
 	protected <T> CassandraConverterRowCallback<T> newRollCallback(CassandraConverter converter, Class<T> type) {
 		return new CassandraConverterRowCallback<T>(converter, type);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-310">DATACASS-310</a>
-	 */
-	@Test
+	@Test // DATACASS-310
 	public void processResultSetHandlesResultSetRows() {
 		ResultSet mockResultSet = mock(ResultSet.class);
 
@@ -91,11 +87,9 @@ public class CassandraTemplateUnitTests {
 		when(mockCassandraConverter.read(eq(Integer.class), eq(mockRowThree))).thenReturn(3);
 
 		List<Integer> results = template.select("SELECT * FROM Test",
-			newRollCallback(mockCassandraConverter, Integer.class));
+				newRollCallback(mockCassandraConverter, Integer.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.size(), is(equalTo(3)));
-		assertThat(results.containsAll(Arrays.asList(1, 2, 3)), is(true));
+		assertThat(results).isNotNull().hasSize(3).contains(1, 2, 3);
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verify(mockResultSet, times(1)).iterator();
@@ -104,10 +98,7 @@ public class CassandraTemplateUnitTests {
 		verify(mockCassandraConverter, times(1)).read(eq(Integer.class), eq(mockRowThree));
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-310">DATACASS-310</a>
-	 */
-	@Test
+	@Test // DATACASS-310
 	public void processResultSetHandlesSingleElementResultSet() {
 		Select mockSelect = mock(Select.class);
 		ResultSet mockResultSet = mock(ResultSet.class);
@@ -118,63 +109,49 @@ public class CassandraTemplateUnitTests {
 		when(mockResultSet.iterator()).thenReturn(iterator(mockRow));
 		when(mockCassandraConverter.read(eq(String.class), eq(mockRow))).thenReturn("test");
 
-		List<String> results = template.select(mockSelect,
-			newRollCallback(mockCassandraConverter, String.class));
+		List<String> results = template.select(mockSelect, newRollCallback(mockCassandraConverter, String.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.size(), is(equalTo(1)));
-		assertThat(results, hasItem("test"));
+		assertThat(results).hasSize(1).contains("test");
 
 		verify(mockSession, times(1)).execute(eq(mockSelect));
 		verify(mockResultSet, times(1)).iterator();
 		verify(mockCassandraConverter, times(1)).read(eq(String.class), eq(mockRow));
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-310">DATACASS-310</a>
-	 */
-	@Test
+	@Test // DATACASS-310
 	public void processResultSetHandlesEmptyResultSet() {
 		CassandraConverter mockCassandraConverter = mock(CassandraConverter.class);
 		ResultSet mockResultSet = mock(ResultSet.class);
 
 		when(mockSession.execute(eq("SELECT * FROM Test"))).thenReturn(mockResultSet);
-		when(mockResultSet.iterator()).thenReturn(this.<Row>iterator());
+		when(mockResultSet.iterator()).thenReturn(this.<Row> iterator());
 
-		List<Object> results = template.select("SELECT * FROM Test",
-			newRollCallback(mockCassandraConverter, Object.class));
+		List<Object> results = template.select("SELECT * FROM Test", newRollCallback(mockCassandraConverter, Object.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.isEmpty(), is(true));
+		assertThat(results).isNotNull();
+		assertThat(results.isEmpty()).isTrue();
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verify(mockResultSet, times(1)).iterator();
 		verifyZeroInteractions(mockCassandraConverter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-310">DATACASS-310</a>
-	 */
-	@Test
+	@Test // DATACASS-310
 	public void processResultSetHandlesNullResultSet() {
 		CassandraConverter mockCassandraConverter = mock(CassandraConverter.class);
 
 		when(mockSession.execute(anyString())).thenReturn(null);
 
-		List<Object> results = template.select("SELECT * FROM Test",
-			newRollCallback(mockCassandraConverter, Object.class));
+		List<Object> results = template.select("SELECT * FROM Test", newRollCallback(mockCassandraConverter, Object.class));
 
-		assertThat(results, is(notNullValue(List.class)));
-		assertThat(results.isEmpty(), is(true));
+		assertThat(results).isNotNull();
+		assertThat(results.isEmpty()).isTrue();
 
 		verify(mockSession, times(1)).execute(eq("SELECT * FROM Test"));
 		verifyZeroInteractions(mockCassandraConverter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void batchOperationsShouldCallSession() {
 		template.batchOps().insert(new Book()).execute();
 

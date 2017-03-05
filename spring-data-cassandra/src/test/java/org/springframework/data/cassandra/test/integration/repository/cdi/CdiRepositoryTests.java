@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.cdi;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.apache.webbeans.cditest.CdiTestContainer;
 import org.apache.webbeans.cditest.CdiTestContainerLoader;
@@ -52,28 +51,25 @@ public class CdiRepositoryTests extends AbstractEmbeddedCassandraIntegrationTest
 
 	@AfterClass
 	public static void shutdown() throws Exception {
-		
+
 		cdiContainer.stopContexts();
 		cdiContainer.shutdownContainer();
 	}
 
 	@Before
 	public void setUp() {
-		
+
 		CdiRepositoryClient client = cdiContainer.getInstance(CdiRepositoryClient.class);
 		repository = client.getRepository();
 		personRepository = client.getSamplePersonRepository();
 		qualifiedUserRepository = client.getQualifiedUserRepository();
 	}
 
-	/**
-	 * @see DATACASS-149
-	 */
-	@Test
+	@Test // DATACASS-149
 	public void testCdiRepository() {
-		
-		assertNotNull(repository);
-		
+
+		assertThat(repository).isNotNull();
+
 		repository.deleteAll();
 
 		User bean = new User();
@@ -83,32 +79,29 @@ public class CdiRepositoryTests extends AbstractEmbeddedCassandraIntegrationTest
 
 		repository.save(bean);
 
-		assertTrue(repository.exists(bean.getUsername()));
+		assertThat(repository.exists(bean.getUsername())).isTrue();
 
 		User retrieved = repository.findOne(bean.getUsername());
-		assertNotNull(retrieved);
-		assertEquals(bean.getUsername(), retrieved.getUsername());
-		assertEquals(bean.getFirstName(), retrieved.getFirstName());
-		assertEquals(bean.getLastName(), retrieved.getLastName());
+		assertThat(retrieved).isNotNull();
+		assertThat(retrieved.getUsername()).isEqualTo(bean.getUsername());
+		assertThat(retrieved.getFirstName()).isEqualTo(bean.getFirstName());
+		assertThat(retrieved.getLastName()).isEqualTo(bean.getLastName());
 
-		assertEquals(1, repository.count());
+		assertThat(repository.count()).isEqualTo(1);
 
-		assertTrue(repository.exists(bean.getUsername()));
+		assertThat(repository.exists(bean.getUsername())).isTrue();
 
 		repository.delete(bean);
 
-		assertEquals(0, repository.count());
+		assertThat(repository.count()).isEqualTo(0);
 		retrieved = repository.findOne(bean.getUsername());
-		assertNull(retrieved);
+		assertThat(retrieved).isNull();
 	}
 
-	/**
-	 * @see DATACASS-249
-	 */
-	@Test
+	@Test // DATACASS-249
 	public void testQualifiedCdiRepository() {
-		
-		assertNotNull(qualifiedUserRepository);
+
+		assertThat(qualifiedUserRepository).isNotNull();
 		qualifiedUserRepository.deleteAll();
 
 		User bean = new User();
@@ -118,15 +111,12 @@ public class CdiRepositoryTests extends AbstractEmbeddedCassandraIntegrationTest
 
 		qualifiedUserRepository.save(bean);
 
-		assertTrue(qualifiedUserRepository.exists(bean.getUsername()));
+		assertThat(qualifiedUserRepository.exists(bean.getUsername())).isTrue();
 	}
 
-	/**
-	 * @see DATACASS-149
-	 */
-	@Test
+	@Test // DATACASS-149
 	public void returnOneFromCustomImpl() {
 
-		assertThat(personRepository.returnOne(), is(1));
+		assertThat(personRepository.returnOne()).isEqualTo(1);
 	}
 }

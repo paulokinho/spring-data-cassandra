@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.core.cql.generator;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,7 +37,6 @@ import com.datastax.driver.core.TableMetadata;
  * Integration tests tests for {@link AlterTableCqlGenerator}.
  *
  * @author Mark Paluch
- * @see DATACASS-192
  */
 public class AlterTableCqlGeneratorIntegrationTests extends AbstractKeyspaceCreatingIntegrationTest {
 
@@ -49,85 +47,70 @@ public class AlterTableCqlGeneratorIntegrationTests extends AbstractKeyspaceCrea
 		session.execute("DROP TABLE IF EXISTS users;");
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableAlterColumnType() {
 
 		session.execute(
 				"CREATE TABLE addamsFamily (name varchar PRIMARY KEY, gender varchar,\n" + "  lastknownlocation bigint);");
 
-		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
-				.alter("lastKnownLocation", DataType.varint());
+		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily").alter("lastKnownLocation",
+				DataType.varint());
 
 		execute(spec);
 
 		ColumnMetadata column = getTableMetadata("addamsFamily").getColumn("lastKnownLocation");
 
-		assertThat(column.getType(), is(equalTo(DataType.varint())));
+		assertThat(column.getType()).isEqualTo(DataType.varint());
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableAlterListColumnType() {
 
 		session.execute(
 				"CREATE TABLE addamsFamily (name varchar PRIMARY KEY, gender varchar,\n" + "  lastknownlocation list<ascii>);");
 
-		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
-				.alter("lastKnownLocation", DataType.list(DataType.varchar()));
+		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily").alter("lastKnownLocation",
+				DataType.list(DataType.varchar()));
 
 		execute(spec);
 
 		ColumnMetadata column = getTableMetadata("addamsFamily").getColumn("lastKnownLocation");
 
-		assertThat(column.getType(), is(equalTo((DataType) DataType.list(DataType.varchar()))));
+		assertThat(column.getType()).isEqualTo((DataType) DataType.list(DataType.varchar()));
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableAddColumn() {
 
 		session.execute(
 				"CREATE TABLE addamsFamily (name varchar PRIMARY KEY, gender varchar,\n" + "  lastknownlocation varchar);");
 
-		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily")
-				.add("gravesite", DataType.varchar());
+		AlterTableSpecification spec = AlterTableSpecification.alterTable("addamsFamily").add("gravesite",
+				DataType.varchar());
 
 		execute(spec);
 
 		ColumnMetadata column = getTableMetadata("addamsFamily").getColumn("gravesite");
 
-		assertThat(column.getType(), is(equalTo(DataType.varchar())));
+		assertThat(column.getType()).isEqualTo(DataType.varchar());
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableAddListColumn() {
 
 		session.execute("CREATE TABLE users (user_name varchar PRIMARY KEY);");
 
-		AlterTableSpecification spec = AlterTableSpecification.alterTable("users")
-				.add("top_places", DataType.list(DataType.ascii()));
+		AlterTableSpecification spec = AlterTableSpecification.alterTable("users").add("top_places",
+				DataType.list(DataType.ascii()));
 
 		execute(spec);
 
 		ColumnMetadata column = getTableMetadata("users").getColumn("top_places");
 
-		assertThat(column.getType(), is(equalTo((DataType) DataType.list(DataType.ascii()))));
+		assertThat(column.getType()).isEqualTo((DataType) DataType.list(DataType.ascii()));
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableDropColumn() {
 
 		session.execute("CREATE TABLE addamsFamily (name varchar PRIMARY KEY, gender varchar);");
@@ -136,13 +119,10 @@ public class AlterTableCqlGeneratorIntegrationTests extends AbstractKeyspaceCrea
 
 		execute(spec);
 
-		assertThat(getTableMetadata("addamsfamily").getColumn("gender"), is(nullValue()));
+		assertThat(getTableMetadata("addamsfamily").getColumn("gender")).isNull();
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableRenameColumn() {
 
 		session.execute("CREATE TABLE addamsFamily (name varchar PRIMARY KEY, firstname varchar);");
@@ -151,14 +131,11 @@ public class AlterTableCqlGeneratorIntegrationTests extends AbstractKeyspaceCrea
 
 		execute(spec);
 
-		assertThat(getTableMetadata("addamsfamily").getColumn("name"), is(nullValue()));
-		assertThat(getTableMetadata("addamsfamily").getColumn("newname"), is(notNullValue()));
+		assertThat(getTableMetadata("addamsfamily").getColumn("name")).isNull();
+		assertThat(getTableMetadata("addamsfamily").getColumn("newname")).isNotNull();
 	}
 
-	/**
-	 * @see DATACASS-192
-	 */
-	@Test
+	@Test // DATACASS-192
 	public void alterTableAddCaching() {
 
 		session.execute("CREATE TABLE users (user_name varchar PRIMARY KEY);");
@@ -171,8 +148,8 @@ public class AlterTableCqlGeneratorIntegrationTests extends AbstractKeyspaceCrea
 
 		execute(spec);
 
-		assertThat(getTableMetadata("users").getOptions().getCaching().get("keys"), is(equalTo("NONE")));
-		assertThat(getTableMetadata("users").getOptions().getCaching().get("rows_per_partition"), is(equalTo("15")));
+		assertThat(getTableMetadata("users").getOptions().getCaching().get("keys")).isEqualTo("NONE");
+		assertThat(getTableMetadata("users").getOptions().getCaching().get("rows_per_partition")).isEqualTo("15");
 
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,12 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.simple;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
 import org.springframework.data.cassandra.core.CassandraOperations;
 
 import com.google.common.collect.Lists;
@@ -52,6 +50,8 @@ public class UserRepositoryIntegrationTests {
 
 	public void setUp() {
 
+		template.execute("CREATE INDEX IF NOT EXISTS users_address ON users (address);");
+
 		repository.deleteAll();
 
 		tom = new User();
@@ -60,6 +60,12 @@ public class UserRepositoryIntegrationTests {
 		tom.setLastName("Ron");
 		tom.setPassword("123");
 		tom.setPlace("SF");
+
+		AddressType address = new AddressType();
+		address.setCity("San Francisco");
+		address.setStreet("Golden Gate Way 1");
+
+		tom.setAddress(address);
 
 		bob = new User();
 		bob.setUsername("bob");
@@ -92,30 +98,38 @@ public class UserRepositoryIntegrationTests {
 
 	public void findByNamedQuery() {
 		String name = repository.findByNamedQuery("bob");
-		Assert.assertNotNull(name);
-		Assert.assertEquals("Bob", name);
+		assertThat(name).isNotNull();
+		assertThat(name).isEqualTo("Bob");
+	}
+
+	public void findByDerivedQuery() {
+
+		User user = repository.findByAddress(tom.getAddress());
+
+		assertThat(user).isNotNull().isEqualTo(tom);
 	}
 
 	public void findsUserById() throws Exception {
 
-		User user = repository.findOne(bob.getUsername());
-		Assert.assertNotNull(user);
-		assertEquals(bob, user);
+		User user = repository.findOne(tom.getUsername());
+		assertThat(user).isNotNull().isEqualTo(tom);
 
 	}
 
 	public void findsAll() throws Exception {
-		List<User> result = Lists.newArrayList(repository.findAll());
-		assertThat(result.size(), is(all.size()));
-		assertThat(result.containsAll(all), is(true));
 
+		List<User> result = Lists.newArrayList(repository.findAll());
+
+		assertThat(result).hasSize(all.size());
+		assertThat(result.containsAll(all)).isTrue();
 	}
 
 	public void findsAllWithGivenIds() {
 
 		Iterable<User> result = repository.findAll(Arrays.asList(bob.getUsername(), tom.getUsername()));
-		assertThat(result, hasItems(bob, tom));
-		assertThat(result, not(hasItems(alice, scott)));
+
+		assertThat(result).contains(bob, tom);
+		assertThat(result).doesNotContain(alice, scott);
 	}
 
 	public void deletesUserCorrectly() throws Exception {
@@ -124,8 +138,8 @@ public class UserRepositoryIntegrationTests {
 
 		List<User> result = Lists.newArrayList(repository.findAll());
 
-		assertThat(result.size(), is(all.size() - 1));
-		assertThat(result, not(hasItem(tom)));
+		assertThat(result).hasSize(all.size() - 1);
+		assertThat(result).doesNotContain(tom);
 	}
 
 	public void deletesUserByIdCorrectly() {
@@ -134,43 +148,32 @@ public class UserRepositoryIntegrationTests {
 
 		List<User> result = Lists.newArrayList(repository.findAll());
 
-		assertThat(result.size(), is(all.size() - 1));
-		assertThat(result, not(hasItem(tom)));
+		assertThat(result).hasSize(all.size() - 1);
+		assertThat(result).doesNotContain(tom);
 	}
 
 	public void exists() {
 
 		String id = "tom";
 
-		assertTrue(repository.exists(id));
+		assertThat(repository.exists(id)).isTrue();
 
 		repository.delete(id);
 
-		assertTrue(!repository.exists(id));
-
+		assertThat(repository.exists(id)).isFalse();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
+	// DATACASS-182
 	public void save() {
 
 		tom.setPassword(null);
-		tom.setFriends(Collections.<String>emptySet());
+		tom.setFriends(Collections.<String> emptySet());
 
 		repository.save(tom);
 
 		User loadedTom = repository.findOne(tom.getUsername());
 
-		assertThat(loadedTom.getPassword(), is(nullValue()));
-		assertThat(loadedTom.getFriends(), is(nullValue()));
-	}
-
-	private static void assertEquals(User user1, User user2) {
-		Assert.assertEquals(user1.getUsername(), user2.getUsername());
-		Assert.assertEquals(user1.getFirstName(), user2.getFirstName());
-		Assert.assertEquals(user1.getLastName(), user2.getLastName());
-		Assert.assertEquals(user1.getPlace(), user2.getPlace());
-		Assert.assertEquals(user1.getPassword(), user2.getPassword());
+		assertThat(loadedTom.getPassword()).isNull();
+		assertThat(loadedTom.getFriends()).isNull();
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.core.cql.generator;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.springframework.cassandra.core.keyspace.IndexDescriptor;
 
@@ -44,8 +43,8 @@ public class CqlIndexSpecificationAssertions {
 
 		IndexMetadata indexMetadata = tableMetadata.getIndex(expected.getName().toCql());
 
-		assertThat(indexMetadata, is(not(nullValue())));
-		assertThat(indexMetadata.getName(), is(equalTo(expected.getName().toCql())));
+		assertThat(indexMetadata).isNotNull();
+		assertThat(indexMetadata.getName()).isEqualTo(expected.getName().toCql());
 	}
 
 	/**
@@ -61,6 +60,6 @@ public class CqlIndexSpecificationAssertions {
 
 		IndexMetadata indexMetadata = tableMetadata.getIndex(expected.getName().toCql());
 
-		assertThat(indexMetadata, is(nullValue()));
+		assertThat(indexMetadata).isNull();
 	}
 }

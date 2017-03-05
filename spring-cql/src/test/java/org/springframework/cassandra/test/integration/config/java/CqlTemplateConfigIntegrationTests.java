@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.config.java;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +23,7 @@ import org.junit.Test;
 import org.springframework.cassandra.config.java.AbstractCqlTemplateConfiguration;
 import org.springframework.cassandra.core.CqlTemplate;
 import org.springframework.cassandra.test.integration.AbstractEmbeddedCassandraIntegrationTest;
-import org.springframework.cassandra.test.integration.support.FastShutdownNettyOptions;
+import org.springframework.cassandra.test.integration.support.IntegrationTestNettyOptions;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -56,7 +55,7 @@ public class CqlTemplateConfigIntegrationTests extends AbstractEmbeddedCassandra
 
 		@Override
 		protected NettyOptions getNettyOptions() {
-			return FastShutdownNettyOptions.INSTANCE;
+			return IntegrationTestNettyOptions.INSTANCE;
 		}
 	}
 
@@ -79,6 +78,6 @@ public class CqlTemplateConfigIntegrationTests extends AbstractEmbeddedCassandra
 	public void test() {
 
 		CqlTemplate cqlTemplate = context.getBean(CqlTemplate.class);
-		assertThat(cqlTemplate.describeRing().size(), is(greaterThan(0)));
+		assertThat(cqlTemplate.describeRing()).isNotEmpty();
 	}
 }

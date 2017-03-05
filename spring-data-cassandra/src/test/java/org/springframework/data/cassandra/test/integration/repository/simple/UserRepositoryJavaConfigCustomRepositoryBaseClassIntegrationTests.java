@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.simple;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.io.Serializable;
 
@@ -53,12 +52,9 @@ public class UserRepositoryJavaConfigCustomRepositoryBaseClassIntegrationTests
 		}
 	}
 
-	/**
-	 * @see DATACASS-211
-	 */
-	@Test
+	@Test // DATACASS-211
 	public void targetRepositoryClassShouldBeConfiguredCustomBaseRepositoryClass() throws Exception {
-		assertThat(((Advised) repository).getTargetSource().getTarget(), is(instanceOf(CustomCassandraRepository.class)));
+		assertThat(((Advised) repository).getTargetSource().getTarget()).isInstanceOf(CustomCassandraRepository.class);
 	}
 
 	public static class CustomCassandraRepository<T, ID extends Serializable> extends SimpleCassandraRepository<T, ID> {

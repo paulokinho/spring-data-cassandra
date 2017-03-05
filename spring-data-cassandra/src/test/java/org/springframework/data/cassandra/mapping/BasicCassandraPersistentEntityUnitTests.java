@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,21 @@
  */
 package org.springframework.data.cassandra.mapping;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.cassandra.core.cql.CqlIdentifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.util.ClassTypeInformation;
 
 /**
@@ -31,6 +37,8 @@ import org.springframework.data.util.ClassTypeInformation;
  *
  * @author Alex Shvid
  * @author Matthew T. Adams
+ * @author John Blum
+ * @author Mark Paluch
  */
 @RunWith(MockitoJUnitRunner.class)
 public class BasicCassandraPersistentEntityUnitTests {
@@ -42,7 +50,7 @@ public class BasicCassandraPersistentEntityUnitTests {
 
 		BasicCassandraPersistentEntity<Notification> entity = new BasicCassandraPersistentEntity<Notification>(
 				ClassTypeInformation.from(Notification.class));
-		assertThat(entity.getTableName().toCql(), is("messages"));
+		assertThat(entity.getTableName().toCql()).isEqualTo("messages");
 	}
 
 	@Test
@@ -51,7 +59,7 @@ public class BasicCassandraPersistentEntityUnitTests {
 		BasicCassandraPersistentEntity<Area> entity = new BasicCassandraPersistentEntity<Area>(
 				ClassTypeInformation.from(Area.class));
 		entity.setApplicationContext(context);
-		assertThat(entity.getTableName().toCql(), is("a123"));
+		assertThat(entity.getTableName().toCql()).isEqualTo("a123");
 	}
 
 	@Test
@@ -67,7 +75,63 @@ public class BasicCassandraPersistentEntityUnitTests {
 				ClassTypeInformation.from(UserLine.class));
 		entity.setApplicationContext(context);
 
-		assertThat(entity.getTableName().toCql(), is(bean.tableName));
+		assertThat(entity.getTableName().toCql()).isEqualTo(bean.tableName);
+	}
+
+	@Test
+	public void setForceQuoteCallsSetTableName() {
+		BasicCassandraPersistentEntity<Message> entitySpy = spy(
+				new BasicCassandraPersistentEntity<Message>(ClassTypeInformation.from(Message.class)));
+
+		entitySpy.tableName = CqlIdentifier.cqlId("Messages", false);
+
+		assertThat(entitySpy.forceQuote).isNull();
+
+		entitySpy.setForceQuote(true);
+
+		assertThat(entitySpy.forceQuote).isTrue();
+
+		verify(entitySpy, times(1)).setTableName(isA(CqlIdentifier.class));
+	}
+
+	@Test
+	public void setForceQuoteDoesNothing() {
+		BasicCassandraPersistentEntity<Message> entitySpy = spy(
+				new BasicCassandraPersistentEntity<Message>(ClassTypeInformation.from(Message.class)));
+
+		entitySpy.forceQuote = true;
+		entitySpy.setForceQuote(true);
+
+		assertThat(entitySpy.forceQuote).isTrue();
+
+		verify(entitySpy, never()).setTableName(isA(CqlIdentifier.class));
+	}
+
+	@Test // DATACASS-172
+	public void isUserDefinedTypeShouldReturnFalse() {
+
+		BasicCassandraPersistentEntity<UserLine> entity = new BasicCassandraPersistentEntity<UserLine>(
+				ClassTypeInformation.from(UserLine.class));
+
+		assertThat(entity.isUserDefinedType()).isFalse();
+	}
+
+	@Test // DATACASS-259
+	public void shouldConsiderComposedTableAnnotation() {
+
+		BasicCassandraPersistentEntity<TableWithComposedAnnotation> entity = new BasicCassandraPersistentEntity<TableWithComposedAnnotation>(
+				ClassTypeInformation.from(TableWithComposedAnnotation.class));
+
+		assertThat(entity.getTableName()).isEqualTo(CqlIdentifier.cqlId("mytable", true));
+	}
+
+	@Test // DATACASS-259
+	public void shouldConsiderComposedPrimaryKeyClassAnnotation() {
+
+		BasicCassandraPersistentEntity<PrimaryKeyClassWithComposedAnnotation> entity = new BasicCassandraPersistentEntity<PrimaryKeyClassWithComposedAnnotation>(
+				ClassTypeInformation.from(PrimaryKeyClassWithComposedAnnotation.class));
+
+		assertThat(entity.isCompositePrimaryKey()).isTrue();
 	}
 
 	@Table("messages")
@@ -89,4 +153,25 @@ public class BasicCassandraPersistentEntityUnitTests {
 			return tableName;
 		}
 	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ ElementType.TYPE })
+	@Table(forceQuote = true)
+	@interface ComposedTableAnnotation {
+
+		@AliasFor(annotation = Table.class)
+		String value() default "mytable";
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ ElementType.TYPE })
+	@PrimaryKeyClass
+	@interface ComposedPrimaryKeyClass {
+	}
+
+	@ComposedTableAnnotation()
+	static class TableWithComposedAnnotation {}
+
+	@ComposedPrimaryKeyClass()
+	static class PrimaryKeyClassWithComposedAnnotation {}
 }

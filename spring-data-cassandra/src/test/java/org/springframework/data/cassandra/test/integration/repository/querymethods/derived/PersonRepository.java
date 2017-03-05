@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.springframework.data.cassandra.repository.CassandraRepository;
 import org.springframework.data.cassandra.repository.Query;
+import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.Address;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.Person;
 import org.springframework.data.domain.Sort;
 
@@ -37,6 +38,11 @@ interface PersonRepository extends CassandraRepository<Person> {
 
 	Person findByFirstnameAndLastname(String firstname, String lastname);
 
+	Person findByMainAddress(Address address);
+
+	@Query("select * from person where mainaddress = ?0")
+	Person findByAddress(Address address);
+
 	Person findByCreatedDate(LocalDate createdDate);
 
 	Person findByNicknameStartsWith(String prefix);
@@ -46,6 +52,10 @@ interface PersonRepository extends CassandraRepository<Person> {
 	Person findByNumberOfChildren(NumberOfChildren numberOfChildren);
 
 	Collection<PersonProjection> findPersonProjectedBy();
+
+	Collection<PersonDto> findPersonDtoBy();
+
+	<T> T findDtoByNicknameStartsWith(String prefix, Class<T> projectionType);
 
 	@Query("select * from person where firstname = ?0 and lastname = 'White'")
 	List<Person> findByFirstname(String firstname);
@@ -59,5 +69,16 @@ interface PersonRepository extends CassandraRepository<Person> {
 		String getFirstname();
 
 		String getLastname();
+	}
+
+	static class PersonDto {
+
+		public String firstname, lastname;
+
+		public PersonDto(String firstname, String lastname) {
+
+			this.firstname = firstname;
+			this.lastname = lastname;
+		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.querymethods.derived;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assume.*;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,12 +28,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.SpringVersion;
 import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
+import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.Address;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.Person;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.derived.PersonRepository.NumberOfChildren;
+import org.springframework.data.cassandra.test.integration.repository.querymethods.derived.PersonRepository.PersonDto;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.derived.PersonRepository.PersonProjection;
 import org.springframework.data.cassandra.test.integration.support.AbstractSpringDataEmbeddedCassandraIntegrationTest;
 import org.springframework.data.cassandra.test.integration.support.CassandraVersion;
@@ -69,11 +70,8 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 
 	}
 
-	@Autowired
-	private CassandraOperations template;
-
-	@Autowired
-	private PersonRepository personRepository;
+	@Autowired private CassandraOperations template;
+	@Autowired private PersonRepository personRepository;
 
 	private Person walter;
 	private Person skyler;
@@ -86,77 +84,111 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 		Person person = new Person("Walter", "White");
 		person.setNumberOfChildren(2);
 
+		person.setMainAddress(new Address("Albuquerque", "USA"));
+		person.setAlternativeAddresses(Arrays.asList(new Address("Albuquerque", "USA"), new Address("New Hampshire", "USA"),
+				new Address("Grocery Store", "Mexico")));
+
 		walter = personRepository.save(person);
 		skyler = personRepository.save(new Person("Skyler", "White"));
 		flynn = personRepository.save(new Person("Flynn (Walter Jr.)", "White"));
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldFindByLastname() {
 
 		List<Person> result = personRepository.findByLastname("White");
 
-		assertThat(result, hasItems(walter, skyler, flynn));
+		assertThat(result).contains(walter, skyler, flynn);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldFindByLastnameAndDynamicSort() {
 
 		List<Person> result = personRepository.findByLastname("White", new Sort("firstname"));
 
-		assertThat(result, contains(flynn, skyler, walter));
+		assertThat(result).contains(flynn, skyler, walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldFindByLastnameWithOrdering() {
 
 		List<Person> result = personRepository.findByLastnameOrderByFirstnameAsc("White");
 
-		assertThat(result, contains(flynn, skyler, walter));
+		assertThat(result).contains(flynn, skyler, walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldFindByFirstnameAndLastname() {
 
 		Person result = personRepository.findByFirstnameAndLastname("Walter", "White");
 
-		assertThat(result, is(walter));
+		assertThat(result).isEqualTo(walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
-	public void executesCollectionQueryWithProjectionCorrectly() {
+	@Test // DATACASS-172
+	public void shouldFindByMappedUdt() throws InterruptedException {
+
+		template.execute("CREATE INDEX IF NOT EXISTS person_main_address ON person (mainaddress);");
+
+		// Give Cassandra some time to build the index
+		Thread.sleep(500);
+
+		Person result = personRepository.findByMainAddress(walter.getMainAddress());
+
+		assertThat(result).isEqualTo(walter);
+	}
+
+	@Test // DATACASS-172
+	public void shouldFindByMappedUdtStringQuery() throws InterruptedException {
+
+		template.execute("CREATE INDEX IF NOT EXISTS person_main_address ON person (mainaddress);");
+
+		// Give Cassandra some time to build the index
+		Thread.sleep(500);
+
+		Person result = personRepository.findByAddress(walter.getMainAddress());
+
+		assertThat(result).isEqualTo(walter);
+	}
+
+	@Test // DATACASS-7
+	public void executesCollectionQueryWithProjection() {
 
 		Collection<PersonProjection> collection = personRepository.findPersonProjectedBy();
 
-		assertThat(collection, hasSize(3));
-
-		for (PersonProjection personProjection : collection) {
-			assertThat(personProjection.getLastname(), is(equalTo("White")));
-		}
+		assertThat(collection).hasSize(3).extracting("lastname").contains("White", "White", "White");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
-	public void shouldFindByNumberOfChildren() throws Exception {
+	@Test // DATACASS-359
+	public void executesCollectionQueryWithDtoProjection() {
 
-		assumeThat(SpringVersion.getVersion(), startsWith("4.3"));
+		Collection<PersonDto> collection = personRepository.findPersonDtoBy();
+
+		assertThat(collection).hasSize(3).extracting("lastname").contains("White", "White", "White");
+	}
+
+	@Test // DATACASS-359
+	public void executesCollectionQueryWithDtoDynamicallyProjected() throws Exception {
+
+		assumeTrue(CassandraVersion.get(template.getSession()).isGreaterThanOrEqualTo(Version.parse("3.4")));
+
+		template.execute(
+				"CREATE CUSTOM INDEX IF NOT EXISTS fn_starts_with ON person (nickname) USING 'org.apache.cassandra.index.sasi.SASIIndex';");
+
+		// Give Cassandra some time to build the index
+		Thread.sleep(500);
+
+		walter.setNickname("Heisenberg");
+		personRepository.save(walter);
+
+		PersonDto heisenberg = personRepository.findDtoByNicknameStartsWith("Heisen", PersonDto.class);
+
+		assertThat(heisenberg.firstname).isEqualTo("Walter");
+		assertThat(heisenberg.lastname).isEqualTo("White");
+	}
+
+	@Test // DATACASS-7
+	public void shouldFindByNumberOfChildren() throws Exception {
 
 		template.execute("CREATE INDEX IF NOT EXISTS person_number_of_children ON person (numberofchildren);");
 
@@ -165,13 +197,10 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 
 		Person result = personRepository.findByNumberOfChildren(NumberOfChildren.TWO);
 
-		assertThat(result, is(walter));
+		assertThat(result).isEqualTo(walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldFindByLocalDate() throws InterruptedException {
 
 		template.execute("CREATE INDEX IF NOT EXISTS person_created_date ON person (createddate);");
@@ -184,13 +213,10 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 
 		Person result = personRepository.findByCreatedDate(walter.getCreatedDate());
 
-		assertThat(result, is(walter));
+		assertThat(result).isEqualTo(walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldUseQueryOverride() {
 
 		Person otherWalter = new Person("Walter", "Black");
@@ -199,13 +225,10 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 
 		List<Person> result = personRepository.findByFirstname("Walter");
 
-		assertThat(result, hasSize(1));
+		assertThat(result).hasSize(1);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldUseStartsWithQuery() throws InterruptedException {
 
 		assumeTrue(CassandraVersion.get(template.getSession()).isGreaterThanOrEqualTo(Version.parse("3.4")));
@@ -219,13 +242,10 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 		walter.setNickname("Heisenberg");
 		personRepository.save(walter);
 
-		assertThat(personRepository.findByNicknameStartsWith("Heis"), is(walter));
+		assertThat(personRepository.findByNicknameStartsWith("Heis")).isEqualTo(walter);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void shouldUseContainsQuery() throws InterruptedException {
 
 		assumeTrue(CassandraVersion.get(template.getSession()).isGreaterThanOrEqualTo(Version.parse("3.4")));
@@ -240,6 +260,6 @@ public class QueryDerivationIntegrationTests extends AbstractSpringDataEmbeddedC
 		walter.setNickname("Heisenberg");
 		personRepository.save(walter);
 
-		assertThat(personRepository.findByNicknameContains("eisenber"), is(walter));
+		assertThat(personRepository.findByNicknameContains("eisenber")).isEqualTo(walter);
 	}
 }

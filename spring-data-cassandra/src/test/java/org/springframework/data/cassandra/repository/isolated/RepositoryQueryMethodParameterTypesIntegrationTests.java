@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.isolated;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -51,13 +50,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.datastax.driver.core.DataType.Name;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
 
 /**
  * Integration tests for various query method parameter types.
  *
  * @author Mark Paluch
- * @see DATACASS-296
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -91,10 +88,7 @@ public class RepositoryQueryMethodParameterTypesIntegrationTests
 		allPossibleTypesRepository.deleteAll();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldFindByLocalDate() {
 
 		session.execute("CREATE INDEX IF NOT EXISTS allpossibletypes_localdate ON allpossibletypes ( localdate )");
@@ -108,18 +102,15 @@ public class RepositoryQueryMethodParameterTypesIntegrationTests
 
 		List<AllPossibleTypes> result = allPossibleTypesRepository.findWithCreatedDate(allPossibleTypes.getLocalDate());
 
-		assertThat(result, hasSize(1));
-		assertThat(result, contains(allPossibleTypes));
+		assertThat(result).hasSize(1);
+		assertThat(result).contains(allPossibleTypes);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldFindByAnnotatedDateParameter() {
 
 		CustomConversions customConversions = new CustomConversions(
-			Collections.singletonList(new DateToLocalDateConverter()));
+				Collections.singletonList(new DateToLocalDateConverter()));
 
 		mappingContext.setCustomConversions(customConversions);
 		converter.setCustomConversions(customConversions);
@@ -140,24 +131,17 @@ public class RepositoryQueryMethodParameterTypesIntegrationTests
 
 		List<AllPossibleTypes> result = allPossibleTypesRepository.findWithAnnotatedDateParameter(Date.from(instant));
 
-		assertThat(result, hasSize(1));
-		assertThat(result, contains(allPossibleTypes));
+		assertThat(result).hasSize(1);
+		assertThat(result).contains(allPossibleTypes);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-304">DATACASS-304</a>
-	 */
-	@Test(expected = CassandraInvalidQueryException.class)
+	@Test(expected = CassandraInvalidQueryException.class) // DATACASS-296, DATACASS-304
 	public void shouldThrowExceptionUsingWrongMethodParameter() {
 		session.execute("CREATE INDEX IF NOT EXISTS allpossibletypes_date ON allpossibletypes ( date )");
 		allPossibleTypesRepository.findWithDateParameter(Date.from(Instant.ofEpochSecond(44234123421L)));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldFindByZoneId() {
 
 		ZoneId zoneId = ZoneId.of("Europe/Paris");
@@ -172,14 +156,11 @@ public class RepositoryQueryMethodParameterTypesIntegrationTests
 
 		List<AllPossibleTypes> result = allPossibleTypesRepository.findWithZoneId(zoneId);
 
-		assertThat(result, hasSize(1));
-		assertThat(result, contains(allPossibleTypes));
+		assertThat(result).hasSize(1);
+		assertThat(result).contains(allPossibleTypes);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldFindByOptionalOfZoneId() {
 
 		ZoneId zoneId = ZoneId.of("Europe/Paris");
@@ -194,8 +175,8 @@ public class RepositoryQueryMethodParameterTypesIntegrationTests
 
 		List<AllPossibleTypes> result = allPossibleTypesRepository.findWithZoneId(Optional.of(zoneId));
 
-		assertThat(result, hasSize(1));
-		assertThat(result, contains(allPossibleTypes));
+		assertThat(result).hasSize(1);
+		assertThat(result).contains(allPossibleTypes);
 	}
 
 	private interface AllPossibleTypesRepository extends CrudRepository<AllPossibleTypes, String> {

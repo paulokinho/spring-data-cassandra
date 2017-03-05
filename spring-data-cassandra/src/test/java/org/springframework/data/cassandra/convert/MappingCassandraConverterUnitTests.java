@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.cassandra.convert;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.startsWith;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assume.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.data.cassandra.RowMockUtil.*;
 import static org.springframework.data.cassandra.repository.support.BasicMapId.*;
+
+import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -71,7 +69,6 @@ import org.springframework.data.cassandra.mapping.Table;
 import org.springframework.data.util.Version;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.DataType.Name;
 import com.datastax.driver.core.LocalDate;
@@ -98,14 +95,9 @@ public class MappingCassandraConverterUnitTests {
 
 	private static final Version VERSION_4_3 = Version.parse("4.3");
 
-	@Rule
-	public final ExpectedException expectedException = ExpectedException.none();
+	@Rule public final ExpectedException expectedException = ExpectedException.none();
 
-	@Mock
-	private ColumnDefinitions columnDefinitionsMock;
-
-	@Mock
-	private Row rowMock;
+	@Mock private Row rowMock;
 
 	private CassandraMappingContext mappingContext;
 	private MappingCassandraConverter mappingCassandraConverter;
@@ -119,10 +111,7 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.afterPropertiesSet();
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void insertEnumShouldMapToString() {
 
 		WithEnumColumns withEnumColumns = new WithEnumColumns();
@@ -133,19 +122,15 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(withEnumColumns, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains("MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void insertEnumDoesNotMapToOrdinalBeforeSpring43() {
 
 		assumeTrue(Version.parse(SpringVersion.getVersion()).isLessThan(VERSION_4_3));
 
 		expectedException.expect(ConverterNotFoundException.class);
-		expectedException.expectMessage(allOf(containsString("No converter found"), containsString("java.lang.Integer")));
 
 		UnsupportedEnumToOrdinalMapping unsupportedEnumToOrdinalMapping = new UnsupportedEnumToOrdinalMapping();
 		unsupportedEnumToOrdinalMapping.setAsOrdinal(Condition.MINT);
@@ -155,10 +140,7 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(unsupportedEnumToOrdinalMapping, insert);
 	}
 
-	/**
-	 * @see DATACASS-255
-	 */
-	@Test
+	@Test // DATACASS-255
 	public void insertEnumMapsToOrdinalWithSpring43AndHiger() {
 
 		assumeTrue(Version.parse(SpringVersion.getVersion()).isGreaterThanOrEqualTo(VERSION_4_3));
@@ -170,13 +152,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(unsupportedEnumToOrdinalMapping, insert);
 
-		assertThat(getValues(insert), hasItem((Object) Integer.valueOf(Condition.USED.ordinal())));
+		assertThat(getValues(insert)).contains((Object) Integer.valueOf(Condition.USED.ordinal()));
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void insertEnumAsPrimaryKeyShouldMapToString() {
 
 		EnumPrimaryKey key = new EnumPrimaryKey();
@@ -186,13 +165,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void insertEnumInCompositePrimaryKeyShouldMapToString() {
 
 		EnumCompositePrimaryKey key = new EnumCompositePrimaryKey();
@@ -205,13 +181,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, insert);
 
-		assertThat(getValues(insert), hasItem((Object) "MINT"));
+		assertThat(getValues(insert)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void updateEnumShouldMapToString() {
 
 		WithEnumColumns withEnumColumns = new WithEnumColumns();
@@ -221,13 +194,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(withEnumColumns, update);
 
-		assertThat(getAssignmentValues(update), hasItem((Object) "MINT"));
+		assertThat(getAssignmentValues(update)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void updateEnumAsPrimaryKeyShouldMapToString() {
 
 		EnumPrimaryKey key = new EnumPrimaryKey();
@@ -237,13 +207,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, update);
 
-		assertThat(getWhereValues(update), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(update)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void updateEnumInCompositePrimaryKeyShouldMapToString() {
 
 		EnumCompositePrimaryKey key = new EnumCompositePrimaryKey();
@@ -256,13 +223,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, update);
 
-		assertThat(getWhereValues(update), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(update)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void whereEnumAsPrimaryKeyShouldMapToString() {
 
 		EnumPrimaryKey key = new EnumPrimaryKey();
@@ -272,13 +236,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, where);
 
-		assertThat(getWhereValues(where), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(where)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-260
-	 */
-	@Test
+	@Test // DATACASS-260
 	public void whereEnumInCompositePrimaryKeyShouldMapToString() {
 
 		EnumCompositePrimaryKey key = new EnumCompositePrimaryKey();
@@ -291,104 +252,80 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(composite, where);
 
-		assertThat(getWhereValues(where), hasItem((Object) "MINT"));
+		assertThat(getWhereValues(where)).contains((Object) "MINT");
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadStringCorrectly() {
 
 		when(rowMock.getString(0)).thenReturn("foo");
 
 		String result = mappingCassandraConverter.readRow(String.class, rowMock);
 
-		assertThat(result, is(equalTo("foo")));
+		assertThat(result).isEqualTo("foo");
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadIntegerCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(2);
 
 		Integer result = mappingCassandraConverter.readRow(Integer.class, rowMock);
 
-		assertThat(result, is(equalTo(2)));
+		assertThat(result).isEqualTo(2);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadLongCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(2);
 
 		Long result = mappingCassandraConverter.readRow(Long.class, rowMock);
 
-		assertThat(result, is(equalTo(2L)));
+		assertThat(result).isEqualTo(2L);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadDoubleCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(2D);
 
 		Double result = mappingCassandraConverter.readRow(Double.class, rowMock);
 
-		assertThat(result, is(equalTo(2D)));
+		assertThat(result).isEqualTo(2D);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadFloatCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(2F);
 
 		Float result = mappingCassandraConverter.readRow(Float.class, rowMock);
 
-		assertThat(result, is(equalTo(2F)));
+		assertThat(result).isEqualTo(2F);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadBigIntegerCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(BigInteger.valueOf(2));
 
 		BigInteger result = mappingCassandraConverter.readRow(BigInteger.class, rowMock);
 
-		assertThat(result, is(equalTo(BigInteger.valueOf(2))));
+		assertThat(result).isEqualTo(BigInteger.valueOf(2));
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadBigDecimalCorrectly() {
 
 		when(rowMock.getObject(0)).thenReturn(BigDecimal.valueOf(2));
 
 		BigDecimal result = mappingCassandraConverter.readRow(BigDecimal.class, rowMock);
 
-		assertThat(result, is(equalTo(BigDecimal.valueOf(2))));
+		assertThat(result).isEqualTo(BigDecimal.valueOf(2));
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadUUIDCorrectly() {
 
 		UUID uuid = UUID.randomUUID();
@@ -397,13 +334,10 @@ public class MappingCassandraConverterUnitTests {
 
 		UUID result = mappingCassandraConverter.readRow(UUID.class, rowMock);
 
-		assertThat(result, is(equalTo(uuid)));
+		assertThat(result).isEqualTo(uuid);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadInetAddressCorrectly() throws UnknownHostException {
 
 		InetAddress localHost = InetAddress.getLocalHost();
@@ -412,14 +346,10 @@ public class MappingCassandraConverterUnitTests {
 
 		InetAddress result = mappingCassandraConverter.readRow(InetAddress.class, rowMock);
 
-		assertThat(result, is(equalTo(localHost)));
+		assertThat(result).isEqualTo(localHost);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-280, DATACASS-271
 	public void shouldReadTimestampCorrectly() {
 
 		Date date = new Date(1);
@@ -428,13 +358,10 @@ public class MappingCassandraConverterUnitTests {
 
 		Date result = mappingCassandraConverter.readRow(Date.class, rowMock);
 
-		assertThat(result, is(equalTo(date)));
+		assertThat(result).isEqualTo(date);
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void shouldReadDateCorrectly() {
 
 		LocalDate date = LocalDate.fromDaysSinceEpoch(1234);
@@ -443,26 +370,20 @@ public class MappingCassandraConverterUnitTests {
 
 		LocalDate result = mappingCassandraConverter.readRow(LocalDate.class, rowMock);
 
-		assertThat(result, is(equalTo(date)));
+		assertThat(result).isEqualTo(date);
 	}
 
-	/**
-	 * @see DATACASS-280
-	 */
-	@Test
+	@Test // DATACASS-280
 	public void shouldReadBooleanCorrectly() {
 
 		when(rowMock.getBool(0)).thenReturn(true);
 
 		Boolean result = mappingCassandraConverter.readRow(Boolean.class, rowMock);
 
-		assertThat(result, is(equalTo(true)));
+		assertThat(result).isEqualTo(true);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadLocalDateCorrectly() {
 
 		LocalDateTime now = LocalDateTime.now();
@@ -473,15 +394,12 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithLocalDate result = mappingCassandraConverter.readRow(TypeWithLocalDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(now.getYear()));
-		assertThat(result.localDate.getMonthValue(), is(now.getMonthValue()));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(now.getYear());
+		assertThat(result.localDate.getMonthValue()).isEqualTo(now.getMonthValue());
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateInsertWithLocalDateCorrectly() {
 
 		java.time.LocalDate now = java.time.LocalDate.now();
@@ -493,14 +411,11 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())),
-			is(true));
+		assertThat(getValues(insert))
+				.contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateUpdateWithLocalDateCorrectly() {
 
 		java.time.LocalDate now = java.time.LocalDate.now();
@@ -512,14 +427,11 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())),
-			is(true));
+		assertThat(getAssignmentValues(update))
+				.contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateInsertWithLocalDateListUsingCassandraDate() {
 
 		java.time.LocalDate now = java.time.LocalDate.now();
@@ -534,15 +446,11 @@ public class MappingCassandraConverterUnitTests {
 
 		List<LocalDate> dates = getListValue(insert);
 
-		assertThat(dates, is(notNullValue(List.class)));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateInsertWithLocalDateSetUsingCassandraDate() {
 
 		java.time.LocalDate now = java.time.LocalDate.now();
@@ -557,15 +465,11 @@ public class MappingCassandraConverterUnitTests {
 
 		Set<LocalDate> dates = getSetValue(insert);
 
-		assertThat(dates, is(notNullValue(Set.class)));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth())));
-		assertThat(dates, hasItem(LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(now.getYear(), now.getMonthValue(), now.getDayOfMonth()));
+		assertThat(dates).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadLocalDateTimeUsingCassandraDateCorrectly() {
 
 		Row rowMock = RowMockUtil.newRowMock(column("id", "my-id", DataType.ascii()),
@@ -574,48 +478,39 @@ public class MappingCassandraConverterUnitTests {
 		TypeWithLocalDateMappedToDate result = mappingCassandraConverter.readRow(TypeWithLocalDateMappedToDate.class,
 				rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthValue(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthValue()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296, DATACASS-400
 	public void shouldCreateInsertWithLocalDateUsingCassandraDateCorrectly() {
 
-		TypeWithLocalDateMappedToDate typeWithLocalDate = new TypeWithLocalDateMappedToDate();
-		typeWithLocalDate.localDate = java.time.LocalDate.of(2010, 7, 4);
+		TypeWithLocalDateMappedToDate typeWithLocalDate = new TypeWithLocalDateMappedToDate(null,
+				java.time.LocalDate.of(2010, 7, 4));
 
 		Insert insert = QueryBuilder.insertInto("table");
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateUpdateWithLocalDateUsingCassandraDateCorrectly() {
 
-		TypeWithLocalDateMappedToDate typeWithLocalDate = new TypeWithLocalDateMappedToDate();
-		typeWithLocalDate.localDate = java.time.LocalDate.of(2010, 7, 4);
+		TypeWithLocalDateMappedToDate typeWithLocalDate = new TypeWithLocalDateMappedToDate(null,
+				java.time.LocalDate.of(2010, 7, 4));
 
 		Update update = QueryBuilder.update("table");
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadLocalDateTimeCorrectly() {
 
 		LocalDateTime now = LocalDateTime.now();
@@ -626,15 +521,12 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithLocalDate result = mappingCassandraConverter.readRow(TypeWithLocalDate.class, rowMock);
 
-		assertThat(result.localDateTime, is(notNullValue()));
-		assertThat(result.localDateTime.getYear(), is(now.getYear()));
-		assertThat(result.localDateTime.getMinute(), is(now.getMinute()));
+		assertThat(result.localDateTime).isNotNull();
+		assertThat(result.localDateTime.getYear()).isEqualTo(now.getYear());
+		assertThat(result.localDateTime.getMinute()).isEqualTo(now.getMinute());
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadInstantCorrectly() {
 
 		LocalDateTime now = LocalDateTime.now();
@@ -645,14 +537,11 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithInstant result = mappingCassandraConverter.readRow(TypeWithInstant.class, rowMock);
 
-		assertThat(result.instant, is(notNullValue()));
-		assertThat(result.instant.getEpochSecond(), is(instant.getEpochSecond()));
+		assertThat(result.instant).isNotNull();
+		assertThat(result.instant.getEpochSecond()).isEqualTo(instant.getEpochSecond());
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadZoneIdCorrectly() {
 
 		Row rowMock = RowMockUtil.newRowMock(column("id", "my-id", DataType.ascii()),
@@ -660,32 +549,26 @@ public class MappingCassandraConverterUnitTests {
 
 		TypeWithZoneId result = mappingCassandraConverter.readRow(TypeWithZoneId.class, rowMock);
 
-		assertThat(result.zoneId, is(notNullValue()));
-		assertThat(result.zoneId.getId(), is(equalTo("Europe/Paris")));
+		assertThat(result.zoneId).isNotNull();
+		assertThat(result.zoneId.getId()).isEqualTo("Europe/Paris");
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadJodaLocalDateTimeUsingCassandraDateCorrectly() {
 
 		Row rowMock = RowMockUtil.newRowMock(column("id", "my-id", DataType.ascii()),
 				column("localDate", LocalDate.fromYearMonthDay(2010, 7, 4), DataType.date()));
 
-		TypeWithJodaLocalDateMappedToDate result =
-			mappingCassandraConverter.readRow(TypeWithJodaLocalDateMappedToDate.class, rowMock);
+		TypeWithJodaLocalDateMappedToDate result = mappingCassandraConverter
+				.readRow(TypeWithJodaLocalDateMappedToDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthOfYear(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthOfYear()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateInsertWithJodaLocalDateUsingCassandraDateCorrectly() {
 
 		TypeWithJodaLocalDateMappedToDate typeWithLocalDate = new TypeWithJodaLocalDateMappedToDate();
@@ -695,13 +578,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateUpdateWithJodaLocalDateUsingCassandraDateCorrectly() {
 
 		TypeWithJodaLocalDateMappedToDate typeWithLocalDate = new TypeWithJodaLocalDateMappedToDate();
@@ -711,31 +591,25 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReadThreeTenBpLocalDateTimeUsingCassandraDateCorrectly() {
 
 		Row rowMock = RowMockUtil.newRowMock(column("id", "my-id", DataType.ascii()),
 				column("localDate", LocalDate.fromYearMonthDay(2010, 7, 4), DataType.date()));
 
-		TypeWithThreeTenBpLocalDateMappedToDate result =
-				mappingCassandraConverter.readRow(TypeWithThreeTenBpLocalDateMappedToDate.class, rowMock);
+		TypeWithThreeTenBpLocalDateMappedToDate result = mappingCassandraConverter
+				.readRow(TypeWithThreeTenBpLocalDateMappedToDate.class, rowMock);
 
-		assertThat(result.localDate, is(notNullValue()));
-		assertThat(result.localDate.getYear(), is(2010));
-		assertThat(result.localDate.getMonthValue(), is(7));
-		assertThat(result.localDate.getDayOfMonth(), is(4));
+		assertThat(result.localDate).isNotNull();
+		assertThat(result.localDate.getYear()).isEqualTo(2010);
+		assertThat(result.localDate.getMonthValue()).isEqualTo(7);
+		assertThat(result.localDate.getDayOfMonth()).isEqualTo(4);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateInsertWithThreeTenBpLocalDateUsingCassandraDateCorrectly() {
 
 		TypeWithThreeTenBpLocalDateMappedToDate typeWithLocalDate = new TypeWithThreeTenBpLocalDateMappedToDate();
@@ -745,13 +619,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, insert);
 
-		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4)), is(true));
+		assertThat(getValues(insert).contains(LocalDate.fromYearMonthDay(2010, 7, 4))).isTrue();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldCreateUpdateWithThreeTenBpLocalDateUsingCassandraDateCorrectly() {
 
 		TypeWithThreeTenBpLocalDateMappedToDate typeWithLocalDate = new TypeWithThreeTenBpLocalDateMappedToDate();
@@ -761,13 +632,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(typeWithLocalDate, update);
 
-		assertThat(getAssignmentValues(update), contains((Object) LocalDate.fromYearMonthDay(2010, 7, 4)));
+		assertThat(getAssignmentValues(update)).contains(LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see DATACASS-206
-	 */
-	@Test
+	@Test // DATACASS-206
 	public void updateShouldUseSpecifiedColumnNames() {
 
 		UserToken userToken = new UserToken();
@@ -780,15 +648,12 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(userToken, update);
 
-		assertThat(getAssignments(update), hasEntry("admincomment", (Object) "admin comment"));
-		assertThat(getAssignments(update), hasEntry("user_comment", (Object) "user comment"));
-		assertThat(getWherePredicates(update), hasEntry("user_id", (Object) userToken.getUserId()));
+		assertThat(getAssignments(update)).containsEntry("admincomment", "admin comment");
+		assertThat(getAssignments(update)).containsEntry("user_comment", "user comment");
+		assertThat(getWherePredicates(update)).containsEntry("user_id", userToken.getUserId());
 	}
 
-	/**
-	 * @see DATACASS-206
-	 */
-	@Test
+	@Test // DATACASS-206
 	public void deleteShouldUseSpecifiedColumnNames() {
 
 		UserToken userToken = new UserToken();
@@ -801,26 +666,20 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(userToken, delete.where());
 
-		assertThat(getWherePredicates(delete), hasEntry("user_id", (Object) userToken.getUserId()));
+		assertThat(getWherePredicates(delete)).containsEntry("user_id", userToken.getUserId());
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionUsingPlainId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
 
 		mappingCassandraConverter.write("42", delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionUsingEntity() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -830,13 +689,10 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(person, delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-308
 	public void shouldFailWriteWhereConditionUsingEntityWithNullId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -844,23 +700,17 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(new Person(), delete.where(), mappingContext.getPersistentEntity(Person.class));
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionUsingMapId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
 
 		mappingCassandraConverter.write(id("id", "42"), delete.where(), mappingContext.getPersistentEntity(Person.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("id", (Object) "42"));
+		assertThat(getWherePredicates(delete)).containsEntry("id", "42");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForCompositeKeyUsingEntity() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -872,14 +722,11 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(entity, delete.where(),
 				mappingContext.getPersistentEntity(TypeWithCompositeKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForCompositeKeyUsingMapId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -887,14 +734,11 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithCompositeKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForMapIdKeyUsingEntity() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -905,27 +749,22 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(entity, delete.where(), mappingContext.getPersistentEntity(TypeWithMapId.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteEnumWhereCondition() {
 
 		Delete delete = QueryBuilder.delete().from("table");
 
-		mappingCassandraConverter.write(Condition.MINT, delete.where(), mappingContext.getPersistentEntity(EnumPrimaryKey.class));
+		mappingCassandraConverter.write(Condition.MINT, delete.where(),
+				mappingContext.getPersistentEntity(EnumPrimaryKey.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("condition", (Object) "MINT"));
+		assertThat(getWherePredicates(delete)).containsEntry("condition", "MINT");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForMapIdKeyUsingMapId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -933,14 +772,11 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithMapId.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForTypeWithPkClassKeyUsingEntity() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -954,14 +790,11 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(entity, delete.where(), mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-308
 	public void shouldFailWritingWhereConditionForTypeWithPkClassKeyUsingEntityWithNullId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -970,10 +803,7 @@ public class MappingCassandraConverterUnitTests {
 				mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForTypeWithPkClassKeyUsingKey() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -984,14 +814,11 @@ public class MappingCassandraConverterUnitTests {
 
 		mappingCassandraConverter.write(key, delete.where(), mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test
+	@Test // DATACASS-308
 	public void shouldWriteWhereConditionForTypeWithPkClassKeyUsingMapId() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -999,14 +826,11 @@ public class MappingCassandraConverterUnitTests {
 		mappingCassandraConverter.write(id("firstname", "Walter").with("lastname", "White"), delete.where(),
 				mappingContext.getPersistentEntity(TypeWithKeyClass.class));
 
-		assertThat(getWherePredicates(delete), hasEntry("firstname", (Object) "Walter"));
-		assertThat(getWherePredicates(delete), hasEntry("lastname", (Object) "White"));
+		assertThat(getWherePredicates(delete)).containsEntry("firstname", "Walter");
+		assertThat(getWherePredicates(delete)).containsEntry("lastname", "White");
 	}
 
-	/**
-	 * @see DATACASS-308
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-308
 	public void shouldFailWhereConditionForTypeWithPkClassKeyUsingMapIdHavingUnknownProperty() {
 
 		Delete delete = QueryBuilder.delete().from("table");
@@ -1101,11 +925,9 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class UnsupportedEnumToOrdinalMapping {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
-		@CassandraType(type = Name.INT)
-		private Condition asOrdinal;
+		@CassandraType(type = Name.INT) private Condition asOrdinal;
 
 		public String getId() {
 			return id;
@@ -1127,8 +949,7 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class WithEnumColumns {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
 		private Condition condition;
 
@@ -1152,8 +973,7 @@ public class MappingCassandraConverterUnitTests {
 	@PrimaryKeyClass
 	public static class EnumCompositePrimaryKey implements Serializable {
 
-		@PrimaryKeyColumn(ordinal = 1, type = PrimaryKeyType.PARTITIONED)
-		private Condition condition;
+		@PrimaryKeyColumn(ordinal = 1, type = PrimaryKeyType.PARTITIONED) private Condition condition;
 
 		public EnumCompositePrimaryKey() {}
 
@@ -1173,8 +993,7 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class EnumPrimaryKey {
 
-		@PrimaryKey
-		private Condition condition;
+		@PrimaryKey private Condition condition;
 
 		public Condition getCondition() {
 			return condition;
@@ -1188,8 +1007,7 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class CompositeKeyThing {
 
-		@PrimaryKey
-		private EnumCompositePrimaryKey key;
+		@PrimaryKey private EnumCompositePrimaryKey key;
 
 		public CompositeKeyThing() {}
 
@@ -1213,8 +1031,7 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class TypeWithLocalDate {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
 		java.time.LocalDate localDate;
 		java.time.LocalDateTime localDateTime;
@@ -1227,13 +1044,12 @@ public class MappingCassandraConverterUnitTests {
 	 * Uses Cassandra's {@link Name#DATE} which maps by default to {@link LocalDate}
 	 */
 	@Table
+	@AllArgsConstructor
 	public static class TypeWithLocalDateMappedToDate {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
-		@CassandraType(type = Name.DATE)
-		java.time.LocalDate localDate;
+		@CassandraType(type = Name.DATE) java.time.LocalDate localDate;
 	}
 
 	/**
@@ -1242,11 +1058,9 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class TypeWithJodaLocalDateMappedToDate {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
-		@CassandraType(type = Name.DATE)
-		org.joda.time.LocalDate localDate;
+		@CassandraType(type = Name.DATE) org.joda.time.LocalDate localDate;
 	}
 
 	/**
@@ -1255,18 +1069,15 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class TypeWithThreeTenBpLocalDateMappedToDate {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
-		@CassandraType(type = Name.DATE)
-		org.threeten.bp.LocalDate localDate;
+		@CassandraType(type = Name.DATE) org.threeten.bp.LocalDate localDate;
 	}
 
 	@Table
 	public static class TypeWithInstant {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
 		Instant instant;
 	}
@@ -1274,8 +1085,7 @@ public class MappingCassandraConverterUnitTests {
 	@Table
 	public static class TypeWithZoneId {
 
-		@PrimaryKey
-		private String id;
+		@PrimaryKey private String id;
 
 		ZoneId zoneId;
 	}

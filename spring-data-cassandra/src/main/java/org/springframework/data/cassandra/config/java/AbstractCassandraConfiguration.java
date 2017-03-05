@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors
+ * Copyright 2013-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.data.cassandra.core.CassandraAdminOperations;
 import org.springframework.data.cassandra.core.CassandraAdminTemplate;
 import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraMappingContext;
+import org.springframework.data.cassandra.mapping.SimpleUserTypeResolver;
 import org.springframework.data.cassandra.mapping.Table;
 import org.springframework.data.mapping.context.MappingContext;
 
@@ -49,8 +50,23 @@ public abstract class AbstractCassandraConfiguration extends AbstractClusterConf
 
 	protected ClassLoader beanClassLoader;
 
+	/**
+	 * Creates a {@link CassandraSessionFactoryBean} that provides a Cassandra {@link com.datastax.driver.core.Session}.
+	 * The lifecycle of {@link CassandraSessionFactoryBean} initializes the {@link #getSchemaAction() schema} in the
+	 * {@link #getKeyspaceName() configured keyspace}.
+	 * 
+	 * @return the {@link CassandraSessionFactoryBean}.
+	 * @throws ClassNotFoundException if an error occurs initializing the initial entity set, see
+	 *           {@link #cassandraMapping()}
+	 * @see #cluster()
+	 * @see #cassandraConverter()
+	 * @see #getKeyspaceName()
+	 * @see #getSchemaAction()
+	 * @see #getStartupScripts()
+	 * @see #getShutdownScripts()
+	 */
 	@Bean
-	public CassandraSessionFactoryBean session() throws Exception {
+	public CassandraSessionFactoryBean session() throws ClassNotFoundException {
 
 		CassandraSessionFactoryBean session = new CassandraSessionFactoryBean();
 
@@ -65,16 +81,17 @@ public abstract class AbstractCassandraConfiguration extends AbstractClusterConf
 	}
 
 	/**
-	 * Creates a {@link CassandraConverter} using the configured {@link #cassandraMapping()}.
-	 * Will apply all specified {@link #customConversions()}.
+	 * Creates a {@link CassandraConverter} using the configured {@link #cassandraMapping()}. Will apply all specified
+	 * {@link #customConversions()}.
 	 *
 	 * @return {@link CassandraConverter} used to convert Java and Cassandra value types during the mapping process.
-	 * @throws Exception if an error occurs initializing or registering the converter.
+	 * @throws ClassNotFoundException if an error occurs initializing the initial entity set, see
+	 *           {@link #cassandraMapping()}
 	 * @see #cassandraMapping()
 	 * @see #customConversions()
 	 */
 	@Bean
-	public CassandraConverter cassandraConverter() throws Exception {
+	public CassandraConverter cassandraConverter() throws ClassNotFoundException {
 
 		MappingCassandraConverter mappingCassandraConverter = new MappingCassandraConverter(cassandraMapping());
 
@@ -99,8 +116,8 @@ public abstract class AbstractCassandraConfiguration extends AbstractClusterConf
 	/**
 	 * Return the {@link MappingContext} instance to map Entities to properties.
 	 *
-	 * @throws ClassNotFoundException if the Cassandra Entity class type identified by name
-	 * cannot be found during the scan.
+	 * @throws ClassNotFoundException if the Cassandra Entity class type identified by name cannot be found during the
+	 *           scan.
 	 * @see CassandraMappingContext
 	 */
 	@Bean
@@ -115,6 +132,7 @@ public abstract class AbstractCassandraConfiguration extends AbstractClusterConf
 
 		mappingContext.setCustomConversions(customConversions);
 		mappingContext.setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
+		mappingContext.setUserTypeResolver(new SimpleUserTypeResolver(cluster().getObject(), getKeyspaceName()));
 
 		return mappingContext;
 	}
@@ -136,7 +154,7 @@ public abstract class AbstractCassandraConfiguration extends AbstractClusterConf
 
 	/**
 	 * Base packages to scan for entities annotated with {@link Table} annotations. By default, returns the package name
-	 * of {@literal this} (<code>this.getClass().getPackage().getName()</code>). This method must never return null.
+	 * of {@literal this} ({@code this.getClass().getPackage().getName()}. This method must never return {@literal null}.
 	 */
 	public String[] getEntityBasePackages() {
 		return new String[] { getClass().getPackage().getName() };

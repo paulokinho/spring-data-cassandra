@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,13 @@
  */
 package org.springframework.cassandra.test.integration.config;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.cassandra.config.CassandraCqlClusterFactoryBean;
-import org.springframework.cassandra.test.integration.support.FastShutdownNettyOptions;
+import org.springframework.cassandra.test.integration.support.IntegrationTestNettyOptions;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.datastax.driver.core.ProtocolVersion;
@@ -51,11 +49,11 @@ public class CassandraCqlClusterFactoryBeanIntegrationTests {
 	@Test
 	public void configuredProtocolVersionShouldBeSet() throws Exception {
 
-		cassandraCqlClusterFactoryBean.setNettyOptions(FastShutdownNettyOptions.INSTANCE);
+		cassandraCqlClusterFactoryBean.setNettyOptions(IntegrationTestNettyOptions.INSTANCE);
 		cassandraCqlClusterFactoryBean.setProtocolVersion(ProtocolVersion.V2);
 		cassandraCqlClusterFactoryBean.afterPropertiesSet();
 
-		assertEquals(ProtocolVersion.V2, getProtocolVersionEnum(cassandraCqlClusterFactoryBean));
+		assertThat(getProtocolVersionEnum(cassandraCqlClusterFactoryBean)).isEqualTo(ProtocolVersion.V2);
 	}
 
 	@Test
@@ -63,7 +61,7 @@ public class CassandraCqlClusterFactoryBeanIntegrationTests {
 
 		cassandraCqlClusterFactoryBean.afterPropertiesSet();
 
-		assertThat(getProtocolVersionEnum(cassandraCqlClusterFactoryBean), is(nullValue()));
+		assertThat(getProtocolVersionEnum(cassandraCqlClusterFactoryBean)).isNull();
 	}
 
 	private ProtocolVersion getProtocolVersionEnum(CassandraCqlClusterFactoryBean cassandraCqlClusterFactoryBean)

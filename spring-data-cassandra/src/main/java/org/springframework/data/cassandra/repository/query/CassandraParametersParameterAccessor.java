@@ -15,6 +15,9 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.data.cassandra.mapping.CassandraSimpleTypeHolder;
 import org.springframework.data.cassandra.mapping.CassandraType;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -23,13 +26,17 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import com.datastax.driver.core.DataType;
 
 /**
- * Cassandra-specific {@link ParameterAccessor} exposing a Cassandra {@link DataType types} that are supported by the
- * driver and parameter type.
+ * Cassandra-specific {@link ParameterAccessor} exposing Cassandra {@link DataType types}
+ * that are supported by the driver and parameter type.
  *
  * @author Mark Paluch
+ * @see org.springframework.data.cassandra.repository.query.CassandraParameterAccessor
+ * @see org.springframework.data.repository.query.ParametersParameterAccessor
  */
 public class CassandraParametersParameterAccessor extends ParametersParameterAccessor
 		implements CassandraParameterAccessor {
+
+	private final List<Object> values;
 
 	/**
 	 * Creates a new {@link CassandraParametersParameterAccessor}.
@@ -38,7 +45,9 @@ public class CassandraParametersParameterAccessor extends ParametersParameterAcc
 	 * @param values must not be {@literal null}.
 	 */
 	public CassandraParametersParameterAccessor(CassandraQueryMethod method, Object... values) {
+
 		super(method.getParameters(), values);
+		this.values = Arrays.asList(values);
 	}
 
 	/*
@@ -78,5 +87,14 @@ public class CassandraParametersParameterAccessor extends ParametersParameterAcc
 	@Override
 	public Class<?> getParameterType(int index) {
 		return getParameters().getParameter(index).getType();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.repository.query.CassandraParameterAccessor#getValues()
+	 */
+	@Override
+	public Object[] getValues() {
+		return values.toArray();
 	}
 }

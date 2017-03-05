@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.config.xml;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,7 +41,7 @@ import com.datastax.driver.core.policies.AddressTranslator;
 import com.datastax.driver.core.policies.SpeculativeExecutionPolicy;
 
 /**
- * Test XML namespace configuration using the spring-cql-1.0.xsd.
+ * Test XML namespace configuration using the spring-cql XSD.
  *
  * @author Matthews T. Adams
  * @author Oliver Gierke
@@ -54,8 +53,7 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 	public static final String KEYSPACE = "xmlconfigtest";
 
-	@Rule
-	public KeyspaceRule keyspaceRule = new KeyspaceRule(cassandraEnvironment, KEYSPACE);
+	@Rule public KeyspaceRule keyspaceRule = new KeyspaceRule(cassandraEnvironment, KEYSPACE);
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -69,8 +67,7 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 	@Before
 	public void setUp() {
-		this.applicationContext = new ClassPathXmlApplicationContext(
-			"XmlConfigIntegrationTests-context.xml", getClass());
+		this.applicationContext = new ClassPathXmlApplicationContext("XmlConfigIntegrationTests-context.xml", getClass());
 
 		this.addressTranslator = applicationContext.getBean(AddressTranslator.class);
 		this.cluster = applicationContext.getBean(Cluster.class);
@@ -95,62 +92,55 @@ public class XmlConfigIntegrationTests extends AbstractEmbeddedCassandraIntegrat
 
 	@Test
 	public void clusterConfigurationIsCorrect() {
-		assertThat(cluster.getConfiguration().getPolicies().getAddressTranslator(), is(equalTo(addressTranslator)));
-		assertThat(cluster.getClusterName(), is(equalTo("skynet")));
-		assertThat(cluster.getConfiguration().getProtocolOptions().getMaxSchemaAgreementWaitSeconds(), is(equalTo(30)));
 
-		assertThat(cluster.getConfiguration().getPolicies().getSpeculativeExecutionPolicy(),
-			is(equalTo(speculativeExecutionPolicy)));
-
-		assertThat(cluster.getConfiguration().getPolicies().getTimestampGenerator(), is(equalTo(timestampGenerator)));
+		assertThat(cluster.getConfiguration().getPolicies().getAddressTranslator()).isEqualTo(addressTranslator);
+		assertThat(cluster.getClusterName()).isEqualTo("skynet");
+		assertThat(cluster.getConfiguration().getProtocolOptions().getMaxSchemaAgreementWaitSeconds()).isEqualTo(2);
+		assertThat(cluster.getConfiguration().getPolicies().getSpeculativeExecutionPolicy())
+				.isEqualTo(speculativeExecutionPolicy);
+		assertThat(cluster.getConfiguration().getPolicies().getTimestampGenerator()).isEqualTo(timestampGenerator);
 	}
 
 	@Test
 	public void clusterBuilderConfigurerWasCalled() {
-		assertThat(clusterBuilderConfigurer, is(instanceOf(TestClusterBuilderConfigurer.class)));
-		assertThat(((TestClusterBuilderConfigurer) clusterBuilderConfigurer).configureCalled.get(), is(true));
+
+		assertThat(clusterBuilderConfigurer).isInstanceOf(TestClusterBuilderConfigurer.class);
+		assertThat(((TestClusterBuilderConfigurer) clusterBuilderConfigurer).configureCalled.get()).isTrue();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void localAndRemotePoolingOptionsWereConfiguredProperly() {
 
 		PoolingOptions poolingOptions = cluster.getConfiguration().getPoolingOptions();
 
-		assertThat(poolingOptions, is(notNullValue(PoolingOptions.class)));
-		assertThat(poolingOptions.getHeartbeatIntervalSeconds(), is(equalTo(60)));
-		assertThat(poolingOptions.getIdleTimeoutSeconds(), is(equalTo(300)));
-		assertThat(poolingOptions.getInitializationExecutor(), is(equalTo(executor)));
-		assertThat(poolingOptions.getPoolTimeoutMillis(), is(equalTo(15000)));
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL), is(equalTo(2)));
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL), is(equalTo(8)));
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL), is(equalTo(100)));
-		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.LOCAL), is(equalTo(25)));
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE), is(equalTo(1)));
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE), is(equalTo(2)));
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE), is(equalTo(100)));
-		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.REMOTE), is(equalTo(25)));
+		assertThat(poolingOptions).isNotNull();
+		assertThat(poolingOptions.getHeartbeatIntervalSeconds()).isEqualTo(60);
+		assertThat(poolingOptions.getIdleTimeoutSeconds()).isEqualTo(300);
+		assertThat(poolingOptions.getInitializationExecutor()).isEqualTo(executor);
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(2);
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL)).isEqualTo(100);
+		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.LOCAL)).isEqualTo(25);
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(1);
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(2);
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE)).isEqualTo(100);
+		assertThat(poolingOptions.getNewConnectionThreshold(HostDistance.REMOTE)).isEqualTo(25);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void socketOptionsWereConfiguredProperly() {
 
 		SocketOptions socketOptions = cluster.getConfiguration().getSocketOptions();
 
-		assertThat(socketOptions, is(notNullValue(SocketOptions.class)));
-		assertThat(socketOptions.getConnectTimeoutMillis(), is(equalTo(5000)));
-		assertThat(socketOptions.getKeepAlive(), is(true));
-		assertThat(socketOptions.getReadTimeoutMillis(), is(equalTo(60000)));
-		assertThat(socketOptions.getReceiveBufferSize(), is(equalTo(65536)));
-		assertThat(socketOptions.getReuseAddress(), is(true));
-		assertThat(socketOptions.getSendBufferSize(), is(equalTo(65536)));
-		assertThat(socketOptions.getSoLinger(), is(equalTo(60)));
-		assertThat(socketOptions.getTcpNoDelay(), is(true));
+		assertThat(socketOptions).isNotNull();
+		assertThat(socketOptions.getConnectTimeoutMillis()).isEqualTo(5000);
+		assertThat(socketOptions.getKeepAlive()).isTrue();
+		assertThat(socketOptions.getReadTimeoutMillis()).isEqualTo(60000);
+		assertThat(socketOptions.getReceiveBufferSize()).isEqualTo(65536);
+		assertThat(socketOptions.getReuseAddress()).isTrue();
+		assertThat(socketOptions.getSendBufferSize()).isEqualTo(65536);
+		assertThat(socketOptions.getSoLinger()).isEqualTo(60);
+		assertThat(socketOptions.getTcpNoDelay()).isTrue();
 	}
 
 	public static class TestClusterBuilderConfigurer implements ClusterBuilderConfigurer {

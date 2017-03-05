@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors
+ * Copyright 2013-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.springframework.cassandra.core.keyspace.CreateKeyspaceSpecification;
 import org.springframework.cassandra.core.keyspace.DropKeyspaceSpecification;
 import org.springframework.cassandra.support.RandomKeySpaceName;
 import org.springframework.cassandra.test.integration.support.CassandraConnectionProperties;
-import org.springframework.cassandra.test.integration.support.FastShutdownNettyOptions;
+import org.springframework.cassandra.test.integration.support.IntegrationTestNettyOptions;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
@@ -64,7 +64,7 @@ public class IntegrationTestConfig extends AbstractCassandraConfiguration {
 
 	@Override
 	protected NettyOptions getNettyOptions() {
-		return FastShutdownNettyOptions.INSTANCE;
+		return IntegrationTestNettyOptions.INSTANCE;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013-2016 the original author or authors
+ *  Copyright 2013-2017 the original author or authors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.springframework.cassandra.config.xml;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.cassandra.support.BeanDefinitionTestUtils.*;
 
 import org.junit.Rule;
@@ -37,10 +36,7 @@ public class ParsingUtilsUnitTests {
 
 	@Rule public ExpectedException exception = ExpectedException.none();
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addOptionalReferencePropertyUsesDefault() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -48,14 +44,11 @@ public class ParsingUtilsUnitTests {
 
 		RuntimeBeanReference propertyValue = getPropertyValue(builder.getBeanDefinition(), "referenceProperty");
 
-		assertThat(propertyValue, is(notNullValue(RuntimeBeanReference.class)));
-		assertThat(propertyValue.getBeanName(), is(equalTo("defaultBeanReference")));
+		assertThat(propertyValue).isNotNull();
+		assertThat(propertyValue.getBeanName()).isEqualTo("defaultBeanReference");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addOptionalReferencePropertyWithNoValueDoesReturnsWithoutAdding() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -63,14 +56,11 @@ public class ParsingUtilsUnitTests {
 
 		BeanDefinition beanDefinition = builder.getRawBeanDefinition();
 
-		assertThat(beanDefinition.getPropertyValues().contains("referenceProperty"), is(false));
-		assertThat(beanDefinition.getPropertyValues().isEmpty(), is(true));
+		assertThat(beanDefinition.getPropertyValues().contains("referenceProperty")).isFalse();
+		assertThat(beanDefinition.getPropertyValues().isEmpty()).isTrue();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addOptionalValuePropertyUsesDefault() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -78,13 +68,10 @@ public class ParsingUtilsUnitTests {
 
 		String propertyValue = getPropertyValue(builder.getBeanDefinition(), "valueProperty");
 
-		assertThat(propertyValue, is(equalTo("defaultValue")));
+		assertThat(propertyValue).isEqualTo("defaultValue");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addOptionalValuePropertyWithNoValueDoesReturnsWithoutAdding() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -92,14 +79,11 @@ public class ParsingUtilsUnitTests {
 
 		BeanDefinition beanDefinition = builder.getRawBeanDefinition();
 
-		assertThat(beanDefinition.getPropertyValues().contains("valueProperty"), is(false));
-		assertThat(beanDefinition.getPropertyValues().isEmpty(), is(true));
+		assertThat(beanDefinition.getPropertyValues().contains("valueProperty")).isFalse();
+		assertThat(beanDefinition.getPropertyValues().isEmpty()).isTrue();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addRequiredReferencePropertyIsSuccessful() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -107,28 +91,21 @@ public class ParsingUtilsUnitTests {
 
 		RuntimeBeanReference propertyValue = getPropertyValue(builder.getBeanDefinition(), "referenceProperty");
 
-		assertThat(propertyValue, is(notNullValue(RuntimeBeanReference.class)));
-		assertThat(propertyValue.getBeanName(), is(equalTo("reference")));
+		assertThat(propertyValue).isNotNull();
+		assertThat(propertyValue.getBeanName()).isEqualTo("reference");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addRequiredReferencePropertyWithNoReferenceFails() {
 
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("value required for property reference [referenceProperty] on class [null]");
 
 		ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(), "referenceProperty", null,
 				"defaultReference", true, true);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addRequiredValuePropertyIsSuccessful() {
 
 		BeanDefinitionBuilder builder = ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(),
@@ -136,44 +113,32 @@ public class ParsingUtilsUnitTests {
 
 		String propertyValue = getPropertyValue(builder.getBeanDefinition(), "valueProperty");
 
-		assertThat(propertyValue, is(equalTo("value")));
+		assertThat(propertyValue).isEqualTo("value");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addRequiredValuePropertyWithNoValueFails() {
 
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("value required for property [valueProperty] on class [null]");
 
 		ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(), "valueProperty", null, "defaultValue", true,
 				false);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addPropertyThrowsIllegalArgumentExceptionForNullBuilder() {
 
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("BeanDefinitionBuilder must not be null");
 
 		ParsingUtils.addProperty(null, "propertyName", "value", "defaultValue", false, false);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-298">DATACASS-298</a>
-	 */
-	@Test
+	@Test // DATACASS-298
 	public void addPropertyThrowsIllegalArgumentExceptionForNullPropertyName() {
 
 		exception.expect(IllegalArgumentException.class);
-		exception.expectCause(is(nullValue(Throwable.class)));
 		exception.expectMessage("Property name must not be null");
 
 		ParsingUtils.addProperty(BeanDefinitionBuilder.genericBeanDefinition(), null, "value", "defaultValue", false, true);

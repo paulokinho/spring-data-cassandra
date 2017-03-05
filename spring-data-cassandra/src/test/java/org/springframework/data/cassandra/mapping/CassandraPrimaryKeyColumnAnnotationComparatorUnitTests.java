@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013-2016 the original author or authors
+ *  Copyright 2013-2017 the original author or authors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.springframework.data.cassandra.mapping;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.springframework.data.cassandra.mapping.CassandraPrimaryKeyColumnAnnotationComparator.*;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -32,19 +31,19 @@ import org.springframework.cassandra.core.PrimaryKeyType;
  * and functionality of the {@link CassandraPrimaryKeyColumnAnnotationComparator} class.
  *
  * @author John Blum
- * @see org.springframework.data.cassandra.mapping.CassandraPrimaryKeyColumnAnnotationComparator
- * @since 1.5.0
+ * @author Mark Paluch
  */
 public class CassandraPrimaryKeyColumnAnnotationComparatorUnitTests {
 
-	private static PrimaryKeyColumn entityOne;
-	private static PrimaryKeyColumn entityTwo;
-	private static PrimaryKeyColumn entityThree;
-	private static PrimaryKeyColumn entityFour;
-	private static PrimaryKeyColumn entityFive;
+	static PrimaryKeyColumn entityOne;
+	static PrimaryKeyColumn entityTwo;
+	static PrimaryKeyColumn entityThree;
+	static PrimaryKeyColumn entityFour;
+	static PrimaryKeyColumn entityFive;
 
 	@BeforeClass
 	public static void setup() throws Exception {
+
 		entityOne = EntityOne.class.getDeclaredField("id").getAnnotation(PrimaryKeyColumn.class);
 		entityTwo = EntityTwo.class.getDeclaredField("id").getAnnotation(PrimaryKeyColumn.class);
 		entityThree = EntityThree.class.getDeclaredField("id").getAnnotation(PrimaryKeyColumn.class);
@@ -52,56 +51,59 @@ public class CassandraPrimaryKeyColumnAnnotationComparatorUnitTests {
 		entityFive = EntityFive.class.getDeclaredField("id").getAnnotation(PrimaryKeyColumn.class);
 	}
 
-	@Test
+	@Test // DATACASS-248
 	public void compareTypes() {
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityOne, entityTwo), is(equalTo(1)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityTwo, entityTwo), is(equalTo(0)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityTwo, entityOne), is(equalTo(-1)));
+
+		assertThat(INSTANCE.compare(entityOne, entityTwo)).isEqualTo(1);
+		assertThat(INSTANCE.compare(entityTwo, entityTwo)).isEqualTo(0);
+		assertThat(INSTANCE.compare(entityTwo, entityOne)).isEqualTo(-1);
 	}
 
-	@Test
+	@Test // DATACASS-248
 	public void compareOrdinals() {
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityOne, entityThree), is(equalTo(-1)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityThree, entityThree), is(equalTo(0)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityThree, entityOne), is(equalTo(1)));
+
+		assertThat(INSTANCE.compare(entityOne, entityThree)).isEqualTo(-1);
+		assertThat(INSTANCE.compare(entityThree, entityThree)).isEqualTo(0);
+		assertThat(INSTANCE.compare(entityThree, entityOne)).isEqualTo(1);
 	}
 
-	@Test
+	@Test // DATACASS-248
 	public void compareName() {
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityOne, entityFour), is(equalTo(-1)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityFour, entityFour), is(equalTo(0)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityFour, entityOne), is(equalTo(1)));
+
+		assertThat(INSTANCE.compare(entityOne, entityFour)).isEqualTo(-1);
+		assertThat(INSTANCE.compare(entityFour, entityFour)).isEqualTo(0);
+		assertThat(INSTANCE.compare(entityFour, entityOne)).isEqualTo(1);
 	}
 
-	@Test
+	@Test // DATACASS-248
 	public void compareOrdering() {
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityOne, entityFive), is(equalTo(-1)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityFive, entityFive), is(equalTo(0)));
-		assertThat(CassandraPrimaryKeyColumnAnnotationComparator.IT.compare(entityFive, entityOne), is(equalTo(1)));
+
+		assertThat(INSTANCE.compare(entityOne, entityFive)).isEqualTo(-1);
+		assertThat(INSTANCE.compare(entityFive, entityFive)).isEqualTo(0);
+		assertThat(INSTANCE.compare(entityFive, entityOne)).isEqualTo(1);
 	}
 
 	static class EntityOne {
-		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "A", ordering = Ordering.ASCENDING)
-		Integer id;
+		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "A",
+				ordering = Ordering.ASCENDING) Integer id;
 	}
 
 	static class EntityTwo {
-		@PrimaryKeyColumn(type = PrimaryKeyType.PARTITIONED, ordinal = 1, name = "A", ordering = Ordering.ASCENDING)
-		Long id;
+		@PrimaryKeyColumn(type = PrimaryKeyType.PARTITIONED, ordinal = 1, name = "A",
+				ordering = Ordering.ASCENDING) Long id;
 	}
 
 	static class EntityThree {
-		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 2, name = "A", ordering = Ordering.ASCENDING)
-		String id;
+		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 2, name = "A",
+				ordering = Ordering.ASCENDING) String id;
 	}
 
 	static class EntityFour {
-		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "B", ordering = Ordering.ASCENDING)
-		Timestamp id;
+		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "B",
+				ordering = Ordering.ASCENDING) Timestamp id;
 	}
 
 	static class EntityFive {
-		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "A", ordering = Ordering.DESCENDING)
-		UUID id;
+		@PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1, name = "A", ordering = Ordering.DESCENDING) UUID id;
 	}
 }

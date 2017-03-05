@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors
+ * Copyright 2013-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,54 +27,46 @@ import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cassandra.core.ConsistencyLevel;
 import org.springframework.cassandra.core.QueryOptions;
 import org.springframework.cassandra.core.RetryPolicy;
 import org.springframework.cassandra.core.WriteOptions;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.cassandra.test.integration.AbstractKeyspaceCreatingIntegrationTest;
+import org.springframework.data.cassandra.core.CassandraTemplate;
 import org.springframework.data.cassandra.domain.UserToken;
 import org.springframework.data.cassandra.repository.support.BasicMapId;
 import org.springframework.data.cassandra.test.integration.simpletons.Book;
 import org.springframework.data.cassandra.test.integration.simpletons.BookCondition;
 import org.springframework.data.cassandra.test.integration.simpletons.BookReference;
-import org.springframework.data.cassandra.test.integration.support.AbstractSpringDataEmbeddedCassandraIntegrationTest;
-import org.springframework.data.cassandra.test.integration.support.IntegrationTestConfig;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.data.cassandra.test.integration.support.SchemaTestUtils;
 
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.utils.UUIDs;
 
 /**
- * Integration tests for {@link CassandraOperations}.
+ * Integration tests for {@link CassandraTemplate}.
  *
  * @author David Webb
  * @author Mark Paluch
  * @author John Blum
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbeddedCassandraIntegrationTest {
+public class CassandraOperationsIntegrationTests extends AbstractKeyspaceCreatingIntegrationTest {
 
-	@Configuration
-	public static class Config extends IntegrationTestConfig {
-
-		@Override
-		public String[] getEntityBasePackages() {
-			return new String[] { Book.class.getPackage().getName(), UserToken.class.getPackage().getName() };
-		}
-	}
-
-	@Autowired
-	CassandraOperations template;
+	CassandraTemplate template;
 
 	@Before
 	public void before() {
-		deleteAllEntities();
+
+		template = new CassandraTemplate(session);
+
+		SchemaTestUtils.potentiallyCreateTableFor(Book.class, template);
+		SchemaTestUtils.potentiallyCreateTableFor(BookReference.class, template);
+		SchemaTestUtils.potentiallyCreateTableFor(UserToken.class, template);
+
+		SchemaTestUtils.truncate(Book.class, template);
+		SchemaTestUtils.truncate(BookReference.class, template);
+		SchemaTestUtils.truncate(UserToken.class, template);
 	}
 
 	@Test
@@ -185,15 +176,14 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 	public void insertEmptyList() {
 		List<Book> list = template.insert(new ArrayList<Book>());
 
-		assertThat(list, is(notNullValue(List.class)));
-		assertThat(list.isEmpty(), is(true));
+		assertThat(list.isEmpty()).isTrue();
 	}
 
 	@Test
 	public void insertNullList() {
 		List<Book> list = template.insert((List<Book>) null);
 
-		assertThat(list, is(nullValue(List.class)));
+		assertThat(list).isNull();
 	}
 
 	@Test
@@ -217,7 +207,7 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		template.insert(books, options);
 
-		assertThat(template.count(Book.class), is(equalTo(80l)));
+		assertThat(template.count(Book.class)).isEqualTo(80l);
 	}
 
 	@Test
@@ -591,11 +581,8 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		Book book = template.selectOne(select, Book.class);
 
-		log.debug("SingleSelect Book Title -> " + book.getTitle());
-		log.debug("SingleSelect Book Author -> " + book.getAuthor());
-
-		assertThat(book.getTitle(), is(equalTo("Spring Data Cassandra Guide")));
-		assertThat(book.getAuthor(), is(equalTo("Cassandra Guru")));
+		assertThat(book.getTitle()).isEqualTo("Spring Data Cassandra Guide");
+		assertThat(book.getAuthor()).isEqualTo("Cassandra Guru");
 
 	}
 
@@ -610,13 +597,11 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		List<Book> selectedBooks = template.select(select, Book.class);
 
-		log.debug("Book Count -> " + selectedBooks.size());
-
-		assertThat(selectedBooks.size(), is(equalTo(20)));
+		assertThat(selectedBooks).hasSize(20);
 
 		for (Book book : selectedBooks) {
-			assertThat(book.isInStock(), is(true));
-			assertThat(book.getCondition(), is(equalTo(BookCondition.NEW)));
+			assertThat(book.isInStock()).isTrue();
+			assertThat(book.getCondition()).isEqualTo(BookCondition.NEW);
 		}
 	}
 
@@ -628,7 +613,7 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		template.insert(books);
 
-		assertThat(template.count(Book.class), is(equalTo(count)));
+		assertThat(template.count(Book.class)).isEqualTo(count);
 	}
 
 	@Test
@@ -639,13 +624,10 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		template.insert(books);
 
-		assertThat(template.count(Book.class), is(equalTo(count)));
+		assertThat(template.count(Book.class)).isEqualTo(count);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void updateShouldRemoveFields() {
 
 		Book book = new Book();
@@ -660,14 +642,11 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		Book loaded = template.selectOneById(Book.class, book.getIsbn());
 
-		assertThat(loaded.getTitle(), is(nullValue()));
-		assertThat(loaded.getAuthor(), is(equalTo("author")));
+		assertThat(loaded.getTitle()).isNull();
+		assertThat(loaded.getAuthor()).isEqualTo("author");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void insertShouldRemoveFields() {
 
 		Book book = new Book();
@@ -683,14 +662,11 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		Book loaded = template.selectOneById(Book.class, book.getIsbn());
 
-		assertThat(loaded.getTitle(), is(nullValue()));
-		assertThat(loaded.getAuthor(), is(equalTo("author")));
+		assertThat(loaded.getTitle()).isNull();
+		assertThat(loaded.getAuthor()).isEqualTo("author");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void updateShouldInsertEntity() {
 
 		Book book = new Book();
@@ -702,15 +678,12 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		Book loaded = template.selectOneById(Book.class, book.getIsbn());
 
-		assertThat(loaded, is(notNullValue()));
-		assertThat(loaded.getAuthor(), is(equalTo("author")));
-		assertThat(loaded.getTitle(), is(equalTo("title")));
+		assertThat(loaded).isNotNull();
+		assertThat(loaded.getAuthor()).isEqualTo("author");
+		assertThat(loaded.getTitle()).isEqualTo("title");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void insertAndUpdateToEmptyCollection() {
 
 		BookReference bookReference = new BookReference();
@@ -726,17 +699,15 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		BookReference loaded = template.selectOneById(BookReference.class, bookReference.getIsbn());
 
-		assertThat(loaded.getTitle(), is(nullValue()));
-		assertThat(loaded.getBookmarks(), is(nullValue()));
+		assertThat(loaded.getTitle()).isNull();
+		assertThat(loaded.getBookmarks()).isNull();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void stream() throws InterruptedException {
 
-		while(template.select("SELECT * FROM book", Book.class).size() != 0){
+		while (template.select("SELECT * FROM book", Book.class).size() != 0) {
+			template.truncate("book");
 			Thread.sleep(10);
 		}
 
@@ -744,7 +715,7 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 
 		Iterator<Book> iterator = template.stream("SELECT * FROM book", Book.class);
 
-		assertThat(iterator, is(notNullValue(Iterator.class)));
+		assertThat(iterator).isNotNull();
 
 		List<Book> selectedBooks = new ArrayList<Book>();
 
@@ -752,14 +723,11 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 			selectedBooks.add(book);
 		}
 
-		assertThat(selectedBooks.size(), is(equalTo(20)));
-		assertThat(selectedBooks.get(0), is(instanceOf(Book.class)));
+		assertThat(selectedBooks).hasSize(20);
+		assertThat(selectedBooks.get(0)).isInstanceOf(Book.class);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-206">DATACASS-206</a>
-	 */
-	@Test
+	@Test // DATACASS-206
 	public void shouldUseSpecifiedColumnNamesForSingleEntityModifyingOperations() {
 
 		UserToken userToken = new UserToken();
@@ -774,21 +742,18 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 		UserToken loaded = template.selectOneById(UserToken.class,
 				BasicMapId.id("userId", userToken.getUserId()).with("token", userToken.getToken()));
 
-		assertThat(loaded, is(notNullValue()));
-		assertThat(loaded.getUserComment(), is(equalTo("comment")));
+		assertThat(loaded).isNotNull();
+		assertThat(loaded.getUserComment()).isEqualTo("comment");
 
 		template.delete(userToken);
 
 		UserToken loadAfterDelete = template.selectOneById(UserToken.class,
 				BasicMapId.id("userId", userToken.getUserId()).with("token", userToken.getToken()));
 
-		assertThat(loadAfterDelete, is(nullValue()));
+		assertThat(loadAfterDelete).isNull();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-206">DATACASS-206</a>
-	 */
-	@Test
+	@Test // DATACASS-206
 	public void shouldUseSpecifiedColumnNamesForMultiEntityModifyingOperations() {
 
 		UserToken userToken = new UserToken();
@@ -803,15 +768,15 @@ public class CassandraOperationsIntegrationTests extends AbstractSpringDataEmbed
 		UserToken loaded = template.selectOneById(UserToken.class,
 				BasicMapId.id("userId", userToken.getUserId()).with("token", userToken.getToken()));
 
-		assertThat(loaded, is(notNullValue()));
-		assertThat(loaded.getUserComment(), is(equalTo("comment")));
+		assertThat(loaded).isNotNull();
+		assertThat(loaded.getUserComment()).isEqualTo("comment");
 
 		template.delete(Collections.singletonList(userToken));
 
 		UserToken loadAfterDelete = template.selectOneById(UserToken.class,
 				BasicMapId.id("userId", userToken.getUserId()).with("token", userToken.getToken()));
 
-		assertThat(loadAfterDelete, is(nullValue()));
+		assertThat(loadAfterDelete).isNull();
 	}
 
 	WriteOptions newWriteOptions(ConsistencyLevel consistencyLevel, RetryPolicy retryPolicy, int timeToLive) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors
+ * Copyright 2013-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,6 @@ public class Comment {
 
 	private String text;
 
-	/**
-	 * @deprecated Only for use by persistence infrastructure
-	 */
-	@Deprecated
 	protected Comment() {}
 
 	public Comment(String author, String company) {
@@ -44,7 +40,7 @@ public class Comment {
 	}
 
 	public Comment(CommentKey pk) {
-		Assert.notNull(pk);
+		Assert.notNull(pk, "CommentKey must not be null");
 		this.pk = pk;
 	}
 

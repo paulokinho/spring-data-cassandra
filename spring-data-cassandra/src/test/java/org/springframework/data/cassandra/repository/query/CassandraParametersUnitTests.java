@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 
 import org.junit.Test;
@@ -39,54 +40,49 @@ public class CassandraParametersUnitTests {
 
 	@Mock CassandraQueryMethod queryMethod;
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReturnUnknownDataTypeForSimpleType() throws Exception {
 
 		Method method = PersonRepository.class.getMethod("findByFirstname", String.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(nullValue()));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType()).isNull();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReturnDataTypeForAnnotatedSimpleType() throws Exception {
 
 		Method method = PersonRepository.class.getMethod("findByFirstTime", String.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(notNullValue()));
-		assertThat(cassandraParameters.getParameter(0).getCassandraType().type(), is(Name.TIME));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType().type()).isEqualTo(Name.TIME);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReturnNoTypeForComplexType() throws Exception {
 
 		Method method = PersonRepository.class.getMethod("findByObject", Object.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(nullValue()));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType()).isNull();
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReturnTypeForAnnotatedType() throws Exception {
 
 		Method method = PersonRepository.class.getMethod("findByAnnotatedObject", Object.class);
 		CassandraParameters cassandraParameters = new CassandraParameters(method);
 
-		assertThat(cassandraParameters.getParameter(0).getCassandraType(), is(notNullValue()));
-		assertThat(cassandraParameters.getParameter(0).getCassandraType().type(), is(Name.TIME));
+		assertThat(cassandraParameters.getParameter(0).getCassandraType().type()).isEqualTo(Name.TIME);
+	}
+
+	@Test // DATACASS-296
+	public void shouldReturnTypeForComposedAnnotationType() throws Exception {
+
+		Method method = PersonRepository.class.getMethod("findByComposedAnnotationObject", Object.class);
+		CassandraParameters cassandraParameters = new CassandraParameters(method);
+
+		assertThat(cassandraParameters.getParameter(0).getCassandraType().type()).isEqualTo(Name.BOOLEAN);
 	}
 
 	interface PersonRepository {
@@ -98,5 +94,12 @@ public class CassandraParametersUnitTests {
 		Person findByObject(Object firstname);
 
 		Person findByAnnotatedObject(@CassandraType(type = Name.TIME) Object firstname);
+
+		Person findByComposedAnnotationObject(@ComposedCassandraTypeAnnotation Object firstname);
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@CassandraType(type = Name.BOOLEAN)
+	@interface ComposedCassandraTypeAnnotation {
 	}
 }

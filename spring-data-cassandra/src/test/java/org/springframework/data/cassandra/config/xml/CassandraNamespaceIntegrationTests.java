@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,18 @@
  */
 package org.springframework.data.cassandra.config.xml;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
+import org.springframework.data.cassandra.mapping.SimpleUserTypeResolver;
 import org.springframework.data.cassandra.test.integration.support.AbstractSpringDataEmbeddedCassandraIntegrationTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Configuration;
@@ -46,51 +47,53 @@ public class CassandraNamespaceIntegrationTests extends AbstractSpringDataEmbedd
 
 	@Autowired ApplicationContext applicationContext;
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void clusterShouldHaveCompressionSet() {
 
 		Cluster cluster = applicationContext.getBean(Cluster.class);
 		Configuration configuration = cluster.getConfiguration();
-		assertThat(configuration.getProtocolOptions().getCompression(), is(Compression.SNAPPY));
+		assertThat(configuration.getProtocolOptions().getCompression()).isEqualTo(Compression.SNAPPY);
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void clusterShouldHavePoolingOptionsConfigured() {
 
 		Cluster cluster = applicationContext.getBean(Cluster.class);
 		PoolingOptions poolingOptions = cluster.getConfiguration().getPoolingOptions();
 
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL), is(101));
-		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE), is(100));
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.LOCAL)).isEqualTo(101);
+		assertThat(poolingOptions.getMaxRequestsPerConnection(HostDistance.REMOTE)).isEqualTo(100);
 
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL), is(3));
-		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE), is(1));
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(3);
+		assertThat(poolingOptions.getCoreConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(1);
 
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL), is(9));
-		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE), is(2));
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(9);
+		assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.REMOTE)).isEqualTo(2);
 	}
 
-	/**
-	 * @see DATACASS-271
-	 */
-	@Test
+	@Test // DATACASS-271
 	public void clusterShouldHaveSocketOptionsConfigured() {
 
 		Cluster cluster = applicationContext.getBean(Cluster.class);
 		SocketOptions socketOptions = cluster.getConfiguration().getSocketOptions();
 
-		assertThat(socketOptions.getConnectTimeoutMillis(), is(5000));
-		assertThat(socketOptions.getKeepAlive(), is(true));
-		assertThat(socketOptions.getReuseAddress(), is(true));
-		assertThat(socketOptions.getTcpNoDelay(), is(true));
-		assertThat(socketOptions.getSoLinger(), is(equalTo(60)));
-		assertThat(socketOptions.getReceiveBufferSize(), is(equalTo(65536)));
-		assertThat(socketOptions.getSendBufferSize(), is(equalTo(65536)));
+		assertThat(socketOptions.getConnectTimeoutMillis()).isEqualTo(5000);
+		assertThat(socketOptions.getKeepAlive()).isTrue();
+		assertThat(socketOptions.getReuseAddress()).isTrue();
+		assertThat(socketOptions.getTcpNoDelay()).isTrue();
+		assertThat(socketOptions.getSoLinger()).isEqualTo(60);
+		assertThat(socketOptions.getReceiveBufferSize()).isEqualTo(65536);
+		assertThat(socketOptions.getSendBufferSize()).isEqualTo(65536);
+	}
+
+	@Test // DATACASS-172
+	public void mappingContextShouldHaveUserTypeResolverConfigured() {
+
+		BasicCassandraMappingContext mappingContext = applicationContext.getBean(BasicCassandraMappingContext.class);
+
+		SimpleUserTypeResolver userTypeResolver = (SimpleUserTypeResolver) ReflectionTestUtils.getField(mappingContext,
+				"userTypeResolver");
+
+		assertThat(userTypeResolver).isNotNull();
 	}
 }

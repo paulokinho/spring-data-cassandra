@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.cdi;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -23,7 +23,6 @@ import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
-import org.springframework.cassandra.core.cql.CqlIdentifier;
 import org.springframework.cassandra.core.keyspace.CreateKeyspaceSpecification;
 import org.springframework.cassandra.core.keyspace.DropKeyspaceSpecification;
 import org.springframework.cassandra.support.RandomKeySpaceName;
@@ -31,7 +30,11 @@ import org.springframework.cassandra.test.integration.support.CassandraConnectio
 import org.springframework.data.cassandra.convert.MappingCassandraConverter;
 import org.springframework.data.cassandra.core.CassandraAdminTemplate;
 import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.data.cassandra.core.CassandraPersistentEntitySchemaCreator;
+import org.springframework.data.cassandra.core.CassandraPersistentEntitySchemaDropper;
+import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraPersistentEntity;
+import org.springframework.data.cassandra.mapping.SimpleUserTypeResolver;
 import org.springframework.data.cassandra.test.integration.repository.simple.User;
 
 import com.datastax.driver.core.Cluster;
@@ -59,7 +62,12 @@ class CassandraOperationsProducer {
 	@ApplicationScoped
 	public CassandraOperations createCassandraOperations(Cluster cluster) throws Exception {
 
-		MappingCassandraConverter cassandraConverter = new MappingCassandraConverter();
+		BasicCassandraMappingContext mappingContext = new BasicCassandraMappingContext();
+		mappingContext.setUserTypeResolver(new SimpleUserTypeResolver(cluster, KEYSPACE_NAME));
+		mappingContext.setInitialEntitySet(Collections.singleton(User.class));
+		mappingContext.afterPropertiesSet();
+
+		MappingCassandraConverter cassandraConverter = new MappingCassandraConverter(mappingContext);
 
 		CassandraAdminTemplate cassandraTemplate = new CassandraAdminTemplate(cluster.connect(), cassandraConverter);
 
@@ -68,10 +76,18 @@ class CassandraOperationsProducer {
 		cassandraTemplate.execute(createKeyspaceSpecification);
 		cassandraTemplate.execute("USE " + KEYSPACE_NAME);
 
-		cassandraTemplate.createTable(true, CqlIdentifier.cqlId("users"), User.class, new HashMap<String, Object>());
+		CassandraPersistentEntitySchemaDropper schemaDropper = new CassandraPersistentEntitySchemaDropper(mappingContext,
+				cassandraTemplate);
+		schemaDropper.dropTables(false);
+		schemaDropper.dropUserTypes(false);
+
+		CassandraPersistentEntitySchemaCreator schemaCreator = new CassandraPersistentEntitySchemaCreator(mappingContext,
+				cassandraTemplate);
+		schemaCreator.createUserTypes(false);
+		schemaCreator.createTables(false);
 
 		for (CassandraPersistentEntity<?> entity : cassandraTemplate.getConverter().getMappingContext()
-				.getPersistentEntities()) {
+				.getTableEntities()) {
 			cassandraTemplate.truncate(entity.getTableName());
 		}
 
@@ -79,10 +95,10 @@ class CassandraOperationsProducer {
 	}
 
 	@OtherQualifier
- 	@UserDB
-    @Produces
+	@UserDB
+	@Produces
 	@ApplicationScoped
-	public CassandraOperations createQualifiedCassandraOperations(CassandraOperations cassandraOperations){
+	public CassandraOperations createQualifiedCassandraOperations(CassandraOperations cassandraOperations) {
 		return cassandraOperations;
 	}
 

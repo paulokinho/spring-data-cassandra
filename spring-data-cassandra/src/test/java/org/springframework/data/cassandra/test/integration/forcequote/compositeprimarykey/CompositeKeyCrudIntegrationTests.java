@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.data.cassandra.test.integration.forcequote.compositeprimarykey;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,17 +25,12 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cassandra.core.QueryOptions;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cassandra.test.integration.AbstractKeyspaceCreatingIntegrationTest;
+import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.CassandraTemplate;
-import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 import org.springframework.data.cassandra.test.integration.forcequote.compositeprimarykey.entity.CorrelationEntity;
-import org.springframework.data.cassandra.test.integration.support.AbstractSpringDataEmbeddedCassandraIntegrationTest;
-import org.springframework.data.cassandra.test.integration.support.IntegrationTestConfig;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.data.cassandra.test.integration.support.SchemaTestUtils;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
@@ -45,20 +40,19 @@ import com.datastax.driver.core.querybuilder.Select;
 /**
  * @author Mark Paluch
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-public class CompositeKeyCrudIntegrationTests extends AbstractSpringDataEmbeddedCassandraIntegrationTest {
+public class CompositeKeyCrudIntegrationTests extends AbstractKeyspaceCreatingIntegrationTest {
 
-	@Configuration
-	@EnableCassandraRepositories(basePackageClasses = ImplicitRepository.class)
-	public static class Config extends IntegrationTestConfig {}
-
-	@Autowired private CassandraTemplate template1;
+	CassandraOperations operations;
 
 	private CorrelationEntity correlationEntity1, correlationEntity2;
 
 	@Before
 	public void setUp() throws Throwable {
+
+		operations = new CassandraTemplate(session);
+
+		SchemaTestUtils.potentiallyCreateTableFor(CorrelationEntity.class, operations);
+		SchemaTestUtils.truncate(CorrelationEntity.class, operations);
 
 		Map<String, String> map1 = new HashMap<String, String>(2);
 		map1.put("v", "1");
@@ -73,27 +67,28 @@ public class CompositeKeyCrudIntegrationTests extends AbstractSpringDataEmbedded
 
 	@Test
 	public void test() {
-		template1.insert(correlationEntity1);
-		template1.insert(correlationEntity2);
+
+		operations.insert(correlationEntity1);
+		operations.insert(correlationEntity2);
 
 		Select select = QueryBuilder.select().from("identity_correlations");
 		select.where(QueryBuilder.eq("type", "a")).and(QueryBuilder.eq("value", "b"));
 		select.setRetryPolicy(DowngradingConsistencyRetryPolicy.INSTANCE);
 		select.setConsistencyLevel(ConsistencyLevel.ONE);
-		List<CorrelationEntity> correlationEntities = template1.select(select, CorrelationEntity.class);
+		List<CorrelationEntity> correlationEntities = operations.select(select, CorrelationEntity.class);
 
-		assertEquals(2, correlationEntities.size());
+		assertThat(correlationEntities).hasSize(2);
 
 		QueryOptions qo = new QueryOptions();
 		qo.setConsistencyLevel(org.springframework.cassandra.core.ConsistencyLevel.ONE);
 		ArrayList<CorrelationEntity> entities = new ArrayList<CorrelationEntity>();
 		entities.add(correlationEntity1);
 		entities.add(correlationEntity2);
-		template1.delete(entities, qo);
+		operations.delete(entities, qo);
 
-		correlationEntities = template1.select(select, CorrelationEntity.class);
+		correlationEntities = operations.select(select, CorrelationEntity.class);
 
-		assertEquals(0, correlationEntities.size());
+		assertThat(correlationEntities).isEmpty();
 	}
 
 }

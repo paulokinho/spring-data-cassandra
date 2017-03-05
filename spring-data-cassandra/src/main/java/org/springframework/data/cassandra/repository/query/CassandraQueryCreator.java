@@ -21,8 +21,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import com.datastax.driver.core.querybuilder.Clause;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Select;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cassandra.core.cql.CqlIdentifier;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.cassandra.mapping.CassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraPersistentEntity;
@@ -32,16 +37,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
-import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.Part.Type;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.util.Assert;
-
-import com.datastax.driver.core.querybuilder.Clause;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 
 /**
  * Custom query creator to create Cassandra criteria.
@@ -52,14 +52,12 @@ import com.datastax.driver.core.querybuilder.Select;
  */
 class CassandraQueryCreator extends AbstractQueryCreator<Select, Clause> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(CassandraQueryCreator.class);
 	private static final Pattern PUNCTUATION_PATTERN = Pattern.compile("\\p{Punct}");
 
-	private static final Logger LOG = LoggerFactory.getLogger(CassandraQueryCreator.class);
-
 	private final CassandraMappingContext mappingContext;
-
 	private final CassandraPersistentEntity<?> entity;
-
+	private final CqlIdentifier tableName;
 	private final WhereBuilder whereBuilder = new WhereBuilder();
 
 	/**
@@ -72,15 +70,16 @@ class CassandraQueryCreator extends AbstractQueryCreator<Select, Clause> {
 	 * @param entityMetadata must not be {@literal null}.
 	 */
 	public CassandraQueryCreator(PartTree tree, CassandraParameterAccessor accessor,
-			CassandraMappingContext mappingContext, EntityMetadata<?> entityMetadata) {
+			CassandraMappingContext mappingContext, CassandraEntityMetadata<?> entityMetadata) {
 
 		super(tree, accessor);
 
 		Assert.notNull(mappingContext, "CassandraMappingContext must not be null");
-		Assert.notNull(entityMetadata, "EntityMetaData must not be null");
+		Assert.notNull(entityMetadata, "CassandraEntityMetadata must not be null");
 
 		this.mappingContext = mappingContext;
 		this.entity = mappingContext.getPersistentEntity(entityMetadata.getJavaType());
+		this.tableName = entityMetadata.getTableName();
 	}
 
 	/* (non-Javadoc)
@@ -89,7 +88,9 @@ class CassandraQueryCreator extends AbstractQueryCreator<Select, Clause> {
 	@Override
 	protected Clause create(Part part, Iterator<Object> iterator) {
 
-		PersistentPropertyPath<CassandraPersistentProperty> path = mappingContext.getPersistentPropertyPath(part.getProperty());
+		PersistentPropertyPath<CassandraPersistentProperty> path =
+			mappingContext.getPersistentPropertyPath(part.getProperty());
+
 		CassandraPersistentProperty property = path.getLeafProperty();
 
 		return from(part, property, (PotentiallyConvertingIterator) iterator);
@@ -131,7 +132,7 @@ class CassandraQueryCreator extends AbstractQueryCreator<Select, Clause> {
 			whereBuilder.and(criteria);
 		}
 
-		Select select = StatementBuilder.select(entity, whereBuilder, sort);
+		Select select = StatementBuilder.select(entity, tableName, whereBuilder, sort);
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Created query {}", select);
@@ -253,9 +254,9 @@ class CassandraQueryCreator extends AbstractQueryCreator<Select, Clause> {
 		 * Build a {@link Select} statement from the given {@link WhereBuilder} and {@link Sort}. Resolves property names
 		 * for {@link Sort} using the {@link CassandraPersistentEntity}.
 		 */
-		static Select select(CassandraPersistentEntity<?> entity, WhereBuilder whereBuilder, Sort sort) {
+		static Select select(CassandraPersistentEntity<?> entity, CqlIdentifier tableName, WhereBuilder whereBuilder, Sort sort) {
 
-			Select select = QueryBuilder.select().from(entity.getTableName().toCql());
+			Select select = QueryBuilder.select().from(tableName.toCql());
 
 			whereBuilder.build(select.where());
 

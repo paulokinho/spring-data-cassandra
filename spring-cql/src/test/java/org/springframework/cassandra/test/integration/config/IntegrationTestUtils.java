@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.config;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.springframework.cassandra.core.CqlTemplate;
 
@@ -27,14 +27,14 @@ import com.datastax.driver.core.Session;
 public class IntegrationTestUtils {
 
 	public static void assertCqlTemplate(CqlTemplate cqlTemplate) {
-		assertNotNull(cqlTemplate);
+		assertThat(cqlTemplate).isNotNull();
 	}
 
 	public static void assertSession(Session session) {
-		assertNotNull(session);
+		assertThat(session).isNotNull();
 	}
 
 	public static void assertKeyspaceExists(String keyspace, Session session) {
-		assertNotNull(session.getCluster().getMetadata().getKeyspace(keyspace));
+		assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNotNull();
 	}
 }

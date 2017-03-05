@@ -15,6 +15,10 @@
  */
 package org.springframework.cassandra.config;
 
+
+import static org.springframework.util.ReflectionUtils.invokeMethod;
+
+import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.FactoryBean;
@@ -22,6 +26,7 @@ import org.springframework.beans.factory.InitializingBean;
 
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Spring {@link FactoryBean} for the Cassandra Java driver {@link PoolingOptions}.
@@ -37,15 +42,32 @@ import com.datastax.driver.core.PoolingOptions;
 @SuppressWarnings("unused")
 public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, InitializingBean {
 
+	private static final PoolingOptions DEFAULT = new PoolingOptions();
+
+	private static final Method SET_MAX_QUEUE_SIZE;
+	private static final Method GET_MAX_QUEUE_SIZE;
+
+	static {
+		SET_MAX_QUEUE_SIZE = ReflectionUtils
+				.findMethod(PoolingOptions.class, "setMaxQueueSize", int.class);
+		GET_MAX_QUEUE_SIZE = ReflectionUtils
+				.findMethod(PoolingOptions.class, "getMaxQueueSize");
+	}
+
 	private Executor initializationExecutor;
 
-	private Integer heartbeatIntervalSeconds;
-	private Integer idleTimeoutSeconds;
+	private int heartbeatIntervalSeconds;
+	private int idleTimeoutSeconds;
 	private Integer localCoreConnections;
 	private Integer localMaxConnections;
 	private Integer localMaxSimultaneousRequests;
 	private Integer localMinSimultaneousRequests;
-	private Integer poolTimeoutMilliseconds;
+
+	// Deprecated since Cassandra Driver 3.1.1
+	private int poolTimeoutMilliseconds;
+
+	// Available since Cassandra Driver 3.1.1
+	private int maxQueueSize;
 	private Integer remoteCoreConnections;
 	private Integer remoteMaxConnections;
 	private Integer remoteMaxSimultaneousRequests;
@@ -63,11 +85,11 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 		poolingOptions = configureRemoteHostDistancePoolingOptions(
 			configureLocalHostDistancePoolingOptions(newPoolingOptions()));
 
-		if (heartbeatIntervalSeconds != null) {
+		if (heartbeatIntervalSeconds != DEFAULT.getHeartbeatIntervalSeconds()) {
 			poolingOptions.setHeartbeatIntervalSeconds(heartbeatIntervalSeconds);
 		}
 
-		if (idleTimeoutSeconds != null) {
+		if (idleTimeoutSeconds != DEFAULT.getIdleTimeoutSeconds()) {
 			poolingOptions.setIdleTimeoutSeconds(idleTimeoutSeconds);
 		}
 
@@ -75,9 +97,26 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 			poolingOptions.setInitializationExecutor(initializationExecutor);
 		}
 
-		if (poolTimeoutMilliseconds != null) {
+		if (poolTimeoutMilliseconds != DEFAULT.getPoolTimeoutMillis()) {
 			poolingOptions.setPoolTimeoutMillis(poolTimeoutMilliseconds);
 		}
+
+		if (!isDefaultMaxQueueSize() && SET_MAX_QUEUE_SIZE != null) {
+			invokeMethod(SET_MAX_QUEUE_SIZE, poolingOptions, maxQueueSize);
+		}
+	}
+
+	private boolean isDefaultMaxQueueSize() {
+
+		if(GET_MAX_QUEUE_SIZE != null){
+
+			Integer defaultMaxQueueSize = (Integer) invokeMethod(GET_MAX_QUEUE_SIZE, poolingOptions);
+			if(defaultMaxQueueSize.intValue() == maxQueueSize){
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/*
@@ -180,7 +219,7 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @param heartbeatIntervalSeconds interval in seconds between heartbeat messages to keep idle connections alive.
 	 */
-	public void setHeartbeatIntervalSeconds(Integer heartbeatIntervalSeconds) {
+	public void setHeartbeatIntervalSeconds(int heartbeatIntervalSeconds) {
 		this.heartbeatIntervalSeconds = heartbeatIntervalSeconds;
 	}
 
@@ -189,7 +228,7 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @return the {@code heartbeatIntervalSeconds}.
 	 */
-	public Integer getHeartbeatIntervalSeconds() {
+	public int getHeartbeatIntervalSeconds() {
 		return heartbeatIntervalSeconds;
 	}
 
@@ -198,7 +237,7 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @param idleTimeoutSeconds idle timeout in seconds before a connection is removed.
 	 */
-	public void setIdleTimeoutSeconds(Integer idleTimeoutSeconds) {
+	public void setIdleTimeoutSeconds(int idleTimeoutSeconds) {
 		this.idleTimeoutSeconds = idleTimeoutSeconds;
 	}
 
@@ -207,7 +246,7 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @return the {@code idleTimeoutSeconds}.
 	 */
-	public Integer getIdleTimeoutSeconds() {
+	public int getIdleTimeoutSeconds() {
 		return idleTimeoutSeconds;
 	}
 
@@ -234,7 +273,7 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @param poolTimeoutMilliseconds timeout in milliseconds used to acquire a connection from the host's pool.
 	 */
-	public void setPoolTimeoutMilliseconds(Integer poolTimeoutMilliseconds) {
+	public void setPoolTimeoutMilliseconds(int poolTimeoutMilliseconds) {
 		this.poolTimeoutMilliseconds = poolTimeoutMilliseconds;
 	}
 
@@ -243,8 +282,26 @@ public class PoolingOptionsFactoryBean implements FactoryBean<PoolingOptions>, I
 	 *
 	 * @return the {@code poolTimeoutMilliseconds}.
 	 */
-	public Integer getPoolTimeoutMilliseconds() {
+	public int getPoolTimeoutMilliseconds() {
 		return poolTimeoutMilliseconds;
+	}
+
+	/**
+	 * Sets the maximum number of requests that get enqueued if no connection is available.
+	 *
+	 * @param maxQueueSize maximum number of requests that get enqueued if no connection is available.
+	 */
+	public void setMaxQueueSize(Integer maxQueueSize) {
+		this.maxQueueSize = maxQueueSize;
+	}
+
+	/**
+	 * Gets the maximum number of requests that get enqueued if no connection is available.
+	 *
+	 * @return the {@code maxQueueSize}.
+	 */
+	public Integer getMaxQueueSize() {
+		return maxQueueSize;
 	}
 
 	/**

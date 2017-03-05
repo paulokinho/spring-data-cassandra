@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,9 @@ import org.springframework.data.cassandra.test.integration.support.AbstractSprin
 public abstract class UserRepositoryIntegrationTestsDelegator
 		extends AbstractSpringDataEmbeddedCassandraIntegrationTest {
 
-	@Autowired
-	CassandraOperations template;
+	@Autowired CassandraOperations template;
 
-	@Autowired
-	UserRepository repository;
+	@Autowired UserRepository repository;
 
 	UserRepositoryIntegrationTests tests;
 
@@ -48,6 +46,11 @@ public abstract class UserRepositoryIntegrationTestsDelegator
 	@Test
 	public void findByNamedQuery() {
 		tests.findByNamedQuery();
+	}
+
+	@Test
+	public void findByDerivedQuery() {
+		tests.findByDerivedQuery();
 	}
 
 	@Test
@@ -80,10 +83,7 @@ public abstract class UserRepositoryIntegrationTestsDelegator
 		tests.exists();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-182">DATACASS-182</a>
-	 */
-	@Test
+	@Test // DATACASS-182
 	public void save() {
 		tests.save();
 	}

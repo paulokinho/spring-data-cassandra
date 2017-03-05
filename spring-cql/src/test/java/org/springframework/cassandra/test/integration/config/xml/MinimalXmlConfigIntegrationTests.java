@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.cassandra.test.integration.config.xml;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.*;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,6 +62,6 @@ public class MinimalXmlConfigIntegrationTests extends AbstractEmbeddedCassandraI
 		IntegrationTestUtils.assertKeyspaceExists(KEYSPACE, session);
 
 		CqlOperations cqlOperations = context.getBean(CqlOperations.class);
-		assertThat(cqlOperations.describeRing().size(), is(greaterThan(0)));
+		assertThat(cqlOperations.describeRing()).isNotEmpty();
 	}
 }

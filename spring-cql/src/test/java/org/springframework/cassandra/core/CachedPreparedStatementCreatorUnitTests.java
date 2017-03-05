@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 package org.springframework.cassandra.core;
 
 import static edu.umd.cs.mtc.TestFramework.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
+
+import edu.umd.cs.mtc.MultithreadedTestCase;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -35,13 +36,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 
-import edu.umd.cs.mtc.MultithreadedTestCase;
-
 /**
  * Unit tests for {@link CachedPreparedStatementCreator}.
  * 
  * @author Mark Paluch
- * @see <a href="https://jira.spring.io/browse/DATACASS-253">DATACASS-253</a>
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CachedPreparedStatementCreatorUnitTests {
@@ -56,40 +54,28 @@ public class CachedPreparedStatementCreatorUnitTests {
 		when(sessionMock.prepare(anyString())).thenReturn(preparedStatement);
 	}
 
-	/**
-	 * @see DATACASS-253
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-253
 	public void shouldRejectEmptyCql() {
 		new CachedPreparedStatementCreator("");
 	}
 
-	/**
-	 * @see DATACASS-253
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-253
 	public void shouldRejectNullCql() {
 		new CachedPreparedStatementCreator(null);
 	}
 
-	/**
-	 * @see DATACASS-253
-	 */
-	@Test
+	@Test // DATACASS-253
 	public void shouldCreatePreparedStatement() {
 
 		CachedPreparedStatementCreator cachedPreparedStatementCreator = new CachedPreparedStatementCreator("my cql");
 
 		PreparedStatement result = cachedPreparedStatementCreator.createPreparedStatement(sessionMock);
 
-		assertThat(result, is(sameInstance(preparedStatement)));
+		assertThat(result).isSameAs(preparedStatement);
 		verify(sessionMock).prepare("my cql");
 	}
 
-	/**
-	 * @see DATACASS-253
-	 */
-	@Test
+	@Test // DATACASS-253
 	public void shouldCacheCreatePreparedStatement() {
 
 		CachedPreparedStatementCreator cachedPreparedStatementCreator = new CachedPreparedStatementCreator("my cql");
@@ -99,15 +85,11 @@ public class CachedPreparedStatementCreatorUnitTests {
 
 		PreparedStatement result = cachedPreparedStatementCreator.createPreparedStatement(sessionMock);
 
-		assertThat(result, is(sameInstance(preparedStatement)));
+		assertThat(result).isSameAs(preparedStatement);
 		verify(sessionMock, times(1)).prepare("my cql");
 	}
 
-	/**
-	 * @see DATACASS-253
-	 * @throws Throwable
-	 */
-	@Test
+	@Test // DATACASS-253
 	public void concurrentAccessToCreateStatementShouldBeSynchronized() throws Throwable {
 
 		CreatePreparedStatementIsThreadSafe concurrentPrepareStatement = new CreatePreparedStatementIsThreadSafe(
@@ -150,7 +132,7 @@ public class CachedPreparedStatementCreatorUnitTests {
 
 			preparedStatementCreator.createPreparedStatement(session);
 
-			assertThat(atomicInteger.get(), is(1));
+			assertThat(atomicInteger.get()).isEqualTo(1);
 		}
 
 		public void thread2() {
@@ -159,7 +141,7 @@ public class CachedPreparedStatementCreatorUnitTests {
 
 			preparedStatementCreator.createPreparedStatement(session);
 
-			assertThat(atomicInteger.get(), is(1));
+			assertThat(atomicInteger.get()).isEqualTo(1);
 		}
 	}
 

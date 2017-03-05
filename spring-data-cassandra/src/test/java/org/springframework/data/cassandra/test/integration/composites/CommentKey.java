@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors
+ * Copyright 2013-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,6 @@ public class CommentKey implements Serializable {
 	@PrimaryKeyColumn(ordinal = 0, type = PrimaryKeyType.PARTITIONED) private String author;
 
 	@PrimaryKeyColumn(ordinal = 1) private String company;
-
-	/**
-	 * @deprecated Only for use by persistence infrastructure
-	 */
-	@Deprecated
-	protected CommentKey() {}
 
 	public CommentKey(String author, String company) {
 		setAuthor(author);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package org.springframework.data.cassandra.test.integration.mapping.customconversion;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,28 +31,19 @@ import java.util.Set;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cassandra.test.integration.AbstractKeyspaceCreatingIntegrationTest;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.convert.CustomConversions;
-import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.data.cassandra.convert.MappingCassandraConverter;
+import org.springframework.data.cassandra.core.CassandraTemplate;
+import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
 import org.springframework.data.cassandra.mapping.Table;
-import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
-import org.springframework.data.cassandra.test.integration.repository.querymethods.datekey.DateThingRepo;
-import org.springframework.data.cassandra.test.integration.support.IntegrationTestConfig;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.data.cassandra.test.integration.support.SchemaTestUtils;
 import org.springframework.util.StringUtils;
 
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Test suite for applying {@link CustomConversions} to
@@ -57,46 +51,33 @@ import lombok.NoArgsConstructor;
  * 
  * @author Mark Paluch
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-public class CustomConversionTests {
+public class CustomConversionTests extends AbstractKeyspaceCreatingIntegrationTest {
 
-	@Configuration
-	@EnableCassandraRepositories(basePackageClasses = DateThingRepo.class)
-	public static class Config extends IntegrationTestConfig {
-
-		@Override
-		public String[] getEntityBasePackages() {
-			return new String[] { Employee.class.getPackage().getName() };
-		}
-
-		@Override
-		public SchemaAction getSchemaAction() {
-			return SchemaAction.RECREATE_DROP_UNUSED;
-		}
-
-		@Override
-		public CustomConversions customConversions() {
-
-			List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
-			converters.add(new PersonReadConverter());
-			converters.add(new PersonWriteConverter());
-
-			return new CustomConversions(converters);
-		}
-	}
-
-	@Autowired CassandraOperations cassandraOperations;
+	CassandraTemplate cassandraOperations;
 
 	@Before
 	public void setUp() {
-		cassandraOperations.deleteAll(Employee.class);
+
+		List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
+		converters.add(new PersonReadConverter());
+		converters.add(new PersonWriteConverter());
+		CustomConversions customConversions = new CustomConversions(converters);
+
+		BasicCassandraMappingContext mappingContext = new BasicCassandraMappingContext();
+		mappingContext.setCustomConversions(customConversions);
+		mappingContext.afterPropertiesSet();
+
+		MappingCassandraConverter converter = new MappingCassandraConverter(mappingContext);
+		converter.setCustomConversions(customConversions);
+		converter.afterPropertiesSet();
+
+		cassandraOperations = new CassandraTemplate(session, converter);
+
+		SchemaTestUtils.potentiallyCreateTableFor(Employee.class, cassandraOperations);
+		SchemaTestUtils.truncate(Employee.class, cassandraOperations);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldInsertCustomConvertedObject() {
 
 		Employee employee = new Employee();
@@ -107,14 +88,11 @@ public class CustomConversionTests {
 
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"), Row.class);
 
-		assertThat(row.getString("id"), is(equalTo("employee-id")));
-		assertThat(row.getString("person"), containsString("\"firstname\":\"Homer\""));
+		assertThat(row.getString("id")).isEqualTo("employee-id");
+		assertThat(row.getString("person")).contains("\"firstname\":\"Homer\"");
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldUpdateCustomConvertedObject() {
 
 		Employee employee = new Employee();
@@ -127,14 +105,11 @@ public class CustomConversionTests {
 
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"), Row.class);
 
-		assertThat(row.getString("id"), is(equalTo("employee-id")));
-		assertThat(row.getString("person"), containsString("\"firstname\":\"Homer\""));
+		assertThat(row.getString("id")).isEqualTo("employee-id");
+		assertThat(row.getString("person")).contains("\"firstname\":\"Homer\"");
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldInsertCustomConvertedObjectWithCollections() {
 
 		Employee employee = new Employee();
@@ -148,17 +123,14 @@ public class CustomConversionTests {
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person", "friends", "people").from("employee"),
 				Row.class);
 
-		assertThat(row.getObject("friends"), is(instanceOf(List.class)));
-		assertThat(row.getList("friends", String.class), hasSize(2));
+		assertThat(row.getObject("friends")).isInstanceOf(List.class);
+		assertThat(row.getList("friends", String.class)).hasSize(2);
 
-		assertThat(row.getObject("people"), is(instanceOf(Set.class)));
-		assertThat(row.getSet("people", String.class), hasSize(1));
+		assertThat(row.getObject("people")).isInstanceOf(Set.class);
+		assertThat(row.getSet("people", String.class)).hasSize(1);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldUpdateCustomConvertedObjectWithCollections() {
 
 		Employee employee = new Employee();
@@ -171,17 +143,14 @@ public class CustomConversionTests {
 		Row row = cassandraOperations.selectOne(QueryBuilder.select("id", "person", "friends", "people").from("employee"),
 				Row.class);
 
-		assertThat(row.getObject("friends"), is(instanceOf(List.class)));
-		assertThat(row.getList("friends", String.class), hasSize(2));
+		assertThat(row.getObject("friends")).isInstanceOf(List.class);
+		assertThat(row.getList("friends", String.class)).hasSize(2);
 
-		assertThat(row.getObject("people"), is(instanceOf(Set.class)));
-		assertThat(row.getSet("people", String.class), hasSize(1));
+		assertThat(row.getObject("people")).isInstanceOf(Set.class);
+		assertThat(row.getSet("people", String.class)).hasSize(1);
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldLoadCustomConvertedObject() {
 
 		cassandraOperations.execute(QueryBuilder.insertInto("employee").value("id", "employee-id").value("person",
@@ -190,16 +159,13 @@ public class CustomConversionTests {
 		Employee employee = cassandraOperations.selectOne(QueryBuilder.select("id", "person").from("employee"),
 				Employee.class);
 
-		assertThat(employee.getId(), is(equalTo("employee-id")));
-		assertThat(employee.getPerson(), is(notNullValue()));
-		assertThat(employee.getPerson().getFirstname(), is(equalTo("Homer")));
-		assertThat(employee.getPerson().getLastname(), is(equalTo("Simpson")));
+		assertThat(employee.getId()).isEqualTo("employee-id");
+		assertThat(employee.getPerson()).isNotNull();
+		assertThat(employee.getPerson().getFirstname()).isEqualTo("Homer");
+		assertThat(employee.getPerson().getLastname()).isEqualTo("Simpson");
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldLoadCustomConvertedWithCollectionsObject() {
 
 		cassandraOperations.execute(QueryBuilder.insertInto("employee").value("id", "employee-id").value("people",
@@ -208,17 +174,14 @@ public class CustomConversionTests {
 		Employee employee = cassandraOperations.selectOne(QueryBuilder.select("id", "people").from("employee"),
 				Employee.class);
 
-		assertThat(employee.getId(), is(equalTo("employee-id")));
-		assertThat(employee.getPeople(), is(notNullValue()));
+		assertThat(employee.getId()).isEqualTo("employee-id");
+		assertThat(employee.getPeople()).isNotNull();
 
 		Person apu = employee.getPeople().iterator().next();
-		assertThat(apu.getFirstname(), is(equalTo("Apu")));
+		assertThat(apu.getFirstname()).isEqualTo("Apu");
 	}
 
-	/**
-	 * @see DATACASS-296
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void dummy() {
 
 		cassandraOperations.execute(QueryBuilder.insertInto("employee").value("id", "employee-id"));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.data.cassandra.repository.support;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class BasicMapIdUnitTests {
 
 		BasicMapId basicMapId = new BasicMapId(map);
 
-		assertEquals(basicMapId.get("field1"), map.get("field1"));
-		assertEquals(basicMapId.get("field2"), map.get("field2"));
+		assertThat(map.get("field1")).isEqualTo(basicMapId.get("field1"));
+		assertThat(map.get("field2")).isEqualTo(basicMapId.get("field2"));
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
@@ -34,6 +33,8 @@ import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraPersistentProperty;
 import org.springframework.data.cassandra.mapping.CassandraType;
 import org.springframework.data.cassandra.repository.query.ConvertingParameterAccessor.PotentiallyConvertingIterator;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 
 import com.datastax.driver.core.DataType;
 
@@ -46,120 +47,103 @@ import com.datastax.driver.core.DataType;
 @RunWith(MockitoJUnitRunner.class)
 public class ConvertingParameterAccessorUnitTests {
 
-	@Mock
-	private CassandraParameterAccessor mockParameterAccessor;
-
-	@Mock
-	private CassandraPersistentProperty mockProperty;
+	@Mock CassandraParameterAccessor mockParameterAccessor;
+	@Mock CassandraPersistentProperty mockProperty;
 
 	ConvertingParameterAccessor convertingParameterAccessor;
-
 	MappingCassandraConverter converter;
 
 	@Before
 	public void setUp() {
+
 		this.converter = new MappingCassandraConverter(new BasicCassandraMappingContext());
 		this.converter.afterPropertiesSet();
 		this.convertingParameterAccessor = new ConvertingParameterAccessor(converter, mockParameterAccessor);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 */
-	@Test
+	@Test // DATACASS-296
 	public void shouldReturnNullBindableValue() {
-		assertThat(convertingParameterAccessor.getBindableValue(0), is(nullValue()));
+
+		ConvertingParameterAccessor accessor = new ConvertingParameterAccessor(converter, mockParameterAccessor);
+
+		assertThat(accessor.getBindableValue(0)).isNull();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 */
-	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@Test // DATACASS-296
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldReturnNativeBindableValue() {
+
 		when(mockParameterAccessor.getBindableValue(0)).thenReturn("hello");
 		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) String.class);
 
-		assertThat(convertingParameterAccessor.getBindableValue(0), is(equalTo((Object) "hello")));
+		ConvertingParameterAccessor accessor = new ConvertingParameterAccessor(converter, mockParameterAccessor);
+
+		when(mockParameterAccessor.getBindableValue(0)).thenReturn("hello");
+		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
+
+		assertThat(accessor.getBindableValue(0)).isEqualTo((Object) "hello");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 */
-	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@Test // DATACASS-296
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldReturnConvertedBindableValue() {
+
 		LocalDate localDate = LocalDate.of(2010, 7, 4);
 
 		when(mockParameterAccessor.getBindableValue(0)).thenReturn(localDate);
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) LocalDate.class);
 
-		assertThat(convertingParameterAccessor.getBindableValue(0),
-			is(equalTo((Object) com.datastax.driver.core.LocalDate.fromYearMonthDay(2010, 7, 4))));
+		assertThat(convertingParameterAccessor.getBindableValue(0))
+				.isEqualTo(com.datastax.driver.core.LocalDate.fromYearMonthDay(2010, 7, 4));
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-296, DATACASS-7
 	public void shouldReturnDataTypeProvidedByDelegate() {
+
 		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.varchar());
 
-		assertThat(convertingParameterAccessor.getDataType(0), is(equalTo(DataType.varchar())));
+		assertThat(convertingParameterAccessor.getDataType(0)).isEqualTo(DataType.varchar());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-296">DATACASS-296</a>
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@Test // DATACASS-296, DATACASS-7
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldConvertCollections() {
+
 		LocalDate localDate = LocalDate.of(2010, 7, 4);
 
-		when(mockParameterAccessor.iterator()).thenReturn((Iterator)
-			Collections.singletonList(Collections.singletonList(localDate)).iterator());
-		when(mockParameterAccessor.getDataType(0)).thenReturn(DataType.list(DataType.date()));
-		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) List.class);
-		when(mockProperty.getType()).thenReturn((Class) List.class);
-		when(mockProperty.getActualType()).thenReturn((Class) LocalDate.class);
-		when(mockProperty.isCollectionLike()).thenReturn(true);
+		when(mockParameterAccessor.iterator())
+				.thenReturn((Iterator) Collections.singletonList(Collections.singletonList(localDate)).iterator());
+		when(mockProperty.getTypeInformation()).thenReturn((TypeInformation) ClassTypeInformation.LIST);
 
 		PotentiallyConvertingIterator iterator = (PotentiallyConvertingIterator) convertingParameterAccessor.iterator();
 		Object converted = iterator.nextConverted(mockProperty);
 
-		assertThat(converted, is(instanceOf(List.class)));
+		assertThat(converted).isInstanceOf(List.class);
 
 		List<?> list = (List<?>) converted;
 
-		assertThat(list.get(0), is(instanceOf(com.datastax.driver.core.LocalDate.class)));
+		assertThat(list.get(0)).isInstanceOf(com.datastax.driver.core.LocalDate.class);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@Test // DATACASS-7
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldProvideTypeBasedOnValue() {
+
 		when(mockParameterAccessor.getDataType(0)).thenReturn(null);
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) LocalDate.class);
 
-		assertThat(convertingParameterAccessor.getDataType(0), is(equalTo(DataType.date())));
+		assertThat(convertingParameterAccessor.getDataType(0)).isEqualTo(DataType.date());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldProvideTypeBasedOnPropertyType() {
+
 		when(mockProperty.getDataType()).thenReturn(DataType.varchar());
 		when(mockProperty.findAnnotation(CassandraType.class)).thenReturn(mock(CassandraType.class));
 		when(mockParameterAccessor.getParameterType(0)).thenReturn((Class) String.class);
-		when(mockParameterAccessor.getDataType(0)).thenReturn(null);
 
-		assertThat(convertingParameterAccessor.getDataType(0, mockProperty), is(equalTo(DataType.varchar())));
+		assertThat(convertingParameterAccessor.getDataType(0, mockProperty)).isEqualTo(DataType.varchar());
 	}
 }

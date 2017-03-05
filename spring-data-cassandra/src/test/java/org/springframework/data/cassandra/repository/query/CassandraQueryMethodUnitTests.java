@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -45,23 +44,17 @@ public class CassandraQueryMethodUnitTests {
 		context = new BasicCassandraMappingContext();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void detectsCollectionFromRepoTypeIfReturnTypeNotAssignable() throws Exception {
 
 		CassandraQueryMethod queryMethod = queryMethod(SampleRepository.class, "method");
 		CassandraEntityMetadata<?> metadata = queryMethod.getEntityInformation();
 
-		assertThat(metadata.getJavaType(), is(typeCompatibleWith(Person.class)));
-		assertThat(metadata.getTableName().toCql(), is("person"));
+		assertThat(metadata.getJavaType()).isAssignableFrom(Person.class);
+		assertThat(metadata.getTableName().toCql()).isEqualTo("person");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class) // DATACASS-7
 	public void rejectsNullMappingContext() throws Exception {
 
 		Method method = SampleRepository.class.getMethod("method");
@@ -70,15 +63,12 @@ public class CassandraQueryMethodUnitTests {
 				new SpelAwareProxyProjectionFactory(), null);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-7">DATACASS-7</a>
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void considersMethodAsCollectionQuery() throws Exception {
 
 		CassandraQueryMethod queryMethod = queryMethod(SampleRepository.class, "method");
 
-		assertThat(queryMethod.isCollectionQuery(), is(true));
+		assertThat(queryMethod.isCollectionQuery()).isTrue();
 	}
 
 	private CassandraQueryMethod queryMethod(Class<?> repository, String name, Class<?>... parameters) throws Exception {

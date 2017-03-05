@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package org.springframework.data.cassandra.test.integration.repository.querymethods.declared.anno;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +25,7 @@ import org.springframework.data.cassandra.repository.Query;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.Person;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.base.PersonRepository;
 import org.springframework.data.cassandra.test.integration.repository.querymethods.declared.named.PersonRepositoryWithNamedQueries;
+import org.springframework.data.repository.query.Param;
 
 import com.datastax.driver.core.ResultSet;
 
@@ -50,16 +49,16 @@ public interface PersonRepositoryWithQueryAnnotations extends PersonRepository {
 	Person[] findFolksWithLastnameAsArray(String lastname);
 
 	@Override
-	@Query("select * from person where lastname = ?0 and firstname = ?1")
+	@Query("select * from person where lastname = ?#{[0]} and firstname = ?1")
 	Person findSingle(String last, String first);
 
 	@Override
-	@Query("select * from person where lastname = ?0")
-	List<Map<String, Object>> findFolksWithLastnameAsListOfMapOfStringToObject(String last);
+	@Query("select * from person where lastname = :last")
+	List<Map<String, Object>> findFolksWithLastnameAsListOfMapOfStringToObject(@Param("last") String last);
 
 	@Override
-	@Query("select nickname from person where lastname = ?0 and firstname = ?1")
-	String findSingleNickname(String last, String first);
+	@Query("select nickname from person where lastname = :#{#last} and firstname = ?1")
+	String findSingleNickname(@Param("last") String last, @Param("first") String first);
 
 	@Override
 	@Query("select birthdate from person where lastname = ?0 and firstname = ?1")

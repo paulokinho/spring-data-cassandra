@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.springframework.data.cassandra.repository.support;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.io.Serializable;
@@ -43,17 +42,13 @@ import org.springframework.data.repository.Repository;
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class CassandraRepositoryFactoryUnitTests {
 
-	@Mock
-	private CassandraConverter converter;
+	@Mock private CassandraConverter converter;
 
-	@Mock
-	private CassandraMappingContext mappingContext;
+	@Mock private CassandraMappingContext mappingContext;
 
-	@Mock
-	private CassandraPersistentEntity entity;
+	@Mock private CassandraPersistentEntity entity;
 
-	@Mock
-	private CassandraTemplate template;
+	@Mock private CassandraTemplate template;
 
 	@Before
 	public void setUp() {
@@ -61,26 +56,20 @@ public class CassandraRepositoryFactoryUnitTests {
 		when(converter.getMappingContext()).thenReturn(mappingContext);
 	}
 
-	/**
-	 * @see DATACASS-7
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void usesMappingCassandraEntityInformationIfMappingContextSet() {
 		when(mappingContext.getPersistentEntity(Person.class)).thenReturn(entity);
 		when(entity.getType()).thenReturn(Person.class);
 
 		CassandraRepositoryFactory repositoryFactory = new CassandraRepositoryFactory(template);
 
-		CassandraEntityInformation<Person, Serializable> entityInformation =
-			repositoryFactory.getEntityInformation(Person.class);
+		CassandraEntityInformation<Person, Serializable> entityInformation = repositoryFactory
+				.getEntityInformation(Person.class);
 
-		assertTrue(entityInformation instanceof MappingCassandraEntityInformation);
+		assertThat(entityInformation).isInstanceOf(MappingCassandraEntityInformation.class);
 	}
 
-	/**
-	 * @see DATACASS-7
-	 */
-	@Test
+	@Test // DATACASS-7
 	public void createsRepositoryWithIdTypeLong() {
 		when(mappingContext.getPersistentEntity(Person.class)).thenReturn(entity);
 		when(entity.getType()).thenReturn(Person.class);
@@ -88,9 +77,8 @@ public class CassandraRepositoryFactoryUnitTests {
 		CassandraRepositoryFactory repositoryFactory = new CassandraRepositoryFactory(template);
 		MyPersonRepository repository = repositoryFactory.getRepository(MyPersonRepository.class);
 
-		assertThat(repository, is(notNullValue()));
+		assertThat(repository).isNotNull();
 	}
 
-	interface MyPersonRepository extends Repository<Person, Long> {
-	}
+	interface MyPersonRepository extends Repository<Person, Long> {}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,19 @@
  */
 package org.springframework.data.cassandra.core;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cassandra.test.integration.AbstractKeyspaceCreatingIntegrationTest;
 import org.springframework.data.cassandra.domain.FlatGroup;
 import org.springframework.data.cassandra.domain.Group;
 import org.springframework.data.cassandra.domain.GroupKey;
-import org.springframework.data.cassandra.test.integration.support.AbstractSpringDataEmbeddedCassandraIntegrationTest;
-import org.springframework.data.cassandra.test.integration.support.IntegrationTestConfig;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.data.cassandra.test.integration.support.SchemaTestUtils;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -42,160 +37,132 @@ import com.datastax.driver.core.Row;
  *
  * @author Mark Paluch
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-public class CassandraBatchTemplateIntegrationTests extends AbstractSpringDataEmbeddedCassandraIntegrationTest {
+public class CassandraBatchTemplateIntegrationTests extends AbstractKeyspaceCreatingIntegrationTest {
 
-	@Configuration
-	public static class Config extends IntegrationTestConfig {
-
-		@Override
-		public String[] getEntityBasePackages() {
-			return new String[] { Group.class.getPackage().getName() };
-		}
-	}
-
-	@Autowired CassandraTemplate cassandraTemplate;
+	CassandraTemplate template;
 
 	@Before
 	public void setUp() throws Exception {
-		cassandraTemplate.deleteAll(Group.class);
+
+		template = new CassandraTemplate(session);
+
+		SchemaTestUtils.potentiallyCreateTableFor(Group.class, template);
+		SchemaTestUtils.potentiallyCreateTableFor(FlatGroup.class, template);
+
+		SchemaTestUtils.truncate(Group.class, template);
+		SchemaTestUtils.truncate(FlatGroup.class, template);
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldInsertEntities() {
 
 		Group walter = new Group(new GroupKey("users", "0x1", "walter"));
 		Group mike = new Group(new GroupKey("users", "0x1", "mike"));
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.insert(walter).insert(mike).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded.getId().getUsername(), is(equalTo(walter.getId().getUsername())));
+		assertThat(loaded.getId().getUsername()).isEqualTo(walter.getId().getUsername());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldInsertCollectionOfEntities() {
 
 		Group walter = new Group(new GroupKey("users", "0x1", "walter"));
 		Group mike = new Group(new GroupKey("users", "0x1", "mike"));
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.insert(Arrays.asList(walter, mike)).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded.getId().getUsername(), is(equalTo(walter.getId().getUsername())));
+		assertThat(loaded.getId().getUsername()).isEqualTo(walter.getId().getUsername());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldUpdateEntities() {
 
-		Group walter = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "walter")));
-		Group mike = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "mike")));
+		Group walter = template.insert(new Group(new GroupKey("users", "0x1", "walter")));
+		Group mike = template.insert(new Group(new GroupKey("users", "0x1", "mike")));
 
 		walter.setEmail("walter@white.com");
 		mike.setEmail("mike@sauls.com");
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.update(walter).update(mike).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded.getEmail(), is(equalTo(walter.getEmail())));
+		assertThat(loaded.getEmail()).isEqualTo(walter.getEmail());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldUpdateCollectionOfEntities() {
 
-		Group walter = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "walter")));
-		Group mike = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "mike")));
+		Group walter = template.insert(new Group(new GroupKey("users", "0x1", "walter")));
+		Group mike = template.insert(new Group(new GroupKey("users", "0x1", "mike")));
 
 		walter.setEmail("walter@white.com");
 		mike.setEmail("mike@sauls.com");
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.update(Arrays.asList(walter, mike)).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded.getEmail(), is(equalTo(walter.getEmail())));
+		assertThat(loaded.getEmail()).isEqualTo(walter.getEmail());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldUpdatesCollectionOfEntities() {
 
-		FlatGroup walter = cassandraTemplate.insert(new FlatGroup("users", "0x1", "walter"));
-		FlatGroup mike = cassandraTemplate.insert(new FlatGroup("users", "0x1", "mike"));
+		FlatGroup walter = template.insert(new FlatGroup("users", "0x1", "walter"));
+		FlatGroup mike = template.insert(new FlatGroup("users", "0x1", "mike"));
 
 		walter.setEmail("walter@white.com");
 		mike.setEmail("mike@sauls.com");
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.update(Arrays.asList(walter, mike)).execute();
 
-		FlatGroup loaded = cassandraTemplate.selectOneById(FlatGroup.class, walter);
+		FlatGroup loaded = template.selectOneById(FlatGroup.class, walter);
 
-		assertThat(loaded.getEmail(), is(equalTo(walter.getEmail())));
+		assertThat(loaded.getEmail()).isEqualTo(walter.getEmail());
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldDeleteEntities() {
 
-		Group walter = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "walter")));
-		Group mike = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "mike")));
+		Group walter = template.insert(new Group(new GroupKey("users", "0x1", "walter")));
+		Group mike = template.insert(new Group(new GroupKey("users", "0x1", "mike")));
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 
 		batchOperations.delete(walter).delete(mike).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded, is(nullValue()));
+		assertThat(loaded).isNull();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldDeleteCollectionOfEntities() {
 
-		Group walter = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "walter")));
-		Group mike = cassandraTemplate.insert(new Group(new GroupKey("users", "0x1", "mike")));
+		Group walter = template.insert(new Group(new GroupKey("users", "0x1", "walter")));
+		Group mike = template.insert(new Group(new GroupKey("users", "0x1", "mike")));
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 
 		batchOperations.delete(Arrays.asList(walter, mike)).execute();
 
-		Group loaded = cassandraTemplate.selectOneById(Group.class, walter.getId());
+		Group loaded = template.selectOneById(Group.class, walter.getId());
 
-		assertThat(loaded, is(nullValue()));
+		assertThat(loaded).isNull();
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test
+	@Test // DATACASS-288
 	public void shouldApplyTimestampToAllEntities() {
 
 		Group walter = new Group(new GroupKey("users", "0x1", "walter"));
@@ -206,25 +173,22 @@ public class CassandraBatchTemplateIntegrationTests extends AbstractSpringDataEm
 
 		long timestamp = (System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)) * 1000;
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.insert(walter).insert(mike).withTimestamp(timestamp).execute();
 
-		ResultSet resultSet = cassandraTemplate.query("SELECT writetime(email) FROM group;");
+		ResultSet resultSet = template.query("SELECT writetime(email) FROM group;");
 
-		assertThat(resultSet.getAvailableWithoutFetching(), is(2));
+		assertThat(resultSet.getAvailableWithoutFetching()).isEqualTo(2);
 
 		for (Row row : resultSet) {
-			assertThat(row.getLong(0), is(timestamp));
+			assertThat(row.getLong(0)).isEqualTo(timestamp);
 		}
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = IllegalStateException.class) // DATACASS-288
 	public void shouldNotExecuteTwice() {
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.insert(new Group(new GroupKey("users", "0x1", "walter"))).execute();
 
 		batchOperations.execute();
@@ -232,13 +196,10 @@ public class CassandraBatchTemplateIntegrationTests extends AbstractSpringDataEm
 		fail("Missing IllegalStateException");
 	}
 
-	/**
-	 * @see <a href="https://jira.spring.io/browse/DATACASS-288">DATACASS-288</a>
-	 */
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = IllegalStateException.class) // DATACASS-288
 	public void shouldNotAllowModificationAfterExecution() {
 
-		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(cassandraTemplate);
+		CassandraBatchOperations batchOperations = new CassandraBatchTemplate(template);
 		batchOperations.insert(new Group(new GroupKey("users", "0x1", "walter"))).execute();
 
 		batchOperations.update(new Group());

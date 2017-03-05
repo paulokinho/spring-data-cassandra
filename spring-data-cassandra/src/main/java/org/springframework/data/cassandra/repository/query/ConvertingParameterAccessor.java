@@ -15,14 +15,15 @@
  */
 package org.springframework.data.cassandra.repository.query;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.springframework.core.CollectionFactory;
-import org.springframework.core.convert.ConversionService;
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.DataType.CollectionType;
+import com.datastax.driver.core.TypeCodec;
+
 import org.springframework.data.cassandra.convert.CassandraConverter;
-import org.springframework.data.cassandra.convert.CustomConversions;
 import org.springframework.data.cassandra.mapping.CassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraPersistentProperty;
 import org.springframework.data.cassandra.mapping.CassandraSimpleTypeHolder;
@@ -31,11 +32,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
-
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.DataType.CollectionType;
-import com.datastax.driver.core.TypeCodec;
 
 /**
  * Custom {@link org.springframework.data.repository.query.ParameterAccessor} that uses a {@link CassandraConverter} to
@@ -48,11 +44,11 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 
 	private final static TypeInformation<Set> SET = ClassTypeInformation.from(Set.class);
 
-	private final CassandraConverter cassandraConverter;
+	private final CassandraConverter converter;
 	private final CassandraParameterAccessor delegate;
 
-	ConvertingParameterAccessor(CassandraConverter cassandraConverter, CassandraParameterAccessor delegate) {
-		this.cassandraConverter = cassandraConverter;
+	ConvertingParameterAccessor(CassandraConverter converter, CassandraParameterAccessor delegate) {
+		this.converter = converter;
 		this.delegate = delegate;
 	}
 
@@ -101,8 +97,7 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 
 		DataType dataType = delegate.getDataType(index);
 
-		return (dataType != null ? dataType
-			: cassandraConverter.getMappingContext().getDataType(getParameterType(index)));
+		return (dataType != null ? dataType : converter.getMappingContext().getDataType(getParameterType(index)));
 	}
 
 	/* (non-Javadoc)
@@ -128,51 +123,39 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 		return new ConvertingIterator(delegate.iterator());
 	}
 
+	/* (non-Javadoc)
+	 * @see org.springframework.data.cassandra.repository.query.CassandraParameterAccessor#getValues()
+	 */
+	@Override
+	public Object[] getValues() {
+		return delegate.getValues();
+	}
+
 	@SuppressWarnings("unchecked")
 	private Object potentiallyConvert(int index, Object bindableValue, CassandraPersistentProperty property) {
 
-		if (bindableValue == null) {
-			return null;
-		}
+		return (bindableValue == null ? null
+				: converter.convertToCassandraColumn(bindableValue, findTypeInformation(index, bindableValue, property)));
+	}
 
-		if (bindableValue.getClass().isArray()) {
-			return bindableValue;
-		}
+	private TypeInformation<?> findTypeInformation(int index, Object bindableValue,
+			CassandraPersistentProperty property) {
 
-		DataType parameterType = getDataType(index, property);
-		TypeCodec<?> cassandraType = CodecRegistry.DEFAULT_INSTANCE.codecFor(parameterType);
+		if (delegate.findCassandraType(index) != null) {
+			TypeCodec<?> typeCodec = CodecRegistry.DEFAULT_INSTANCE.codecFor(getDataType(index, property));
 
-		if (property != null && getCustomConversions().hasCustomWriteTarget(property.getActualType())
-				&& property.isCollectionLike()) {
-
-			Class<?> customWriteTarget = getCustomConversions().getCustomWriteTarget(property.getActualType());
-
-			if (Collection.class.isAssignableFrom(property.getType()) && bindableValue instanceof Collection) {
-
-				Collection<Object> original = (Collection<Object>) bindableValue;
-				Collection<Object> converted = CollectionFactory.createCollection(property.getType(), original.size());
-
-				for (Object element : original) {
-					converted.add(getConversionService().convert(element, customWriteTarget));
-				}
-
-				return converted;
+			if (typeCodec.getJavaType().getType() instanceof Class<?>) {
+				return ClassTypeInformation.from((Class<?>) typeCodec.getJavaType().getType());
 			}
+
+			return ClassTypeInformation.from(typeCodec.getJavaType().getRawType());
 		}
 
-		if (cassandraType.getJavaType().getRawType().isAssignableFrom(bindableValue.getClass())) {
-			return bindableValue;
+		if (property == null) {
+			return ClassTypeInformation.from(bindableValue.getClass());
 		}
 
-		return cassandraConverter.getConversionService().convert(bindableValue, cassandraType.getJavaType().getRawType());
-	}
-
-	private CustomConversions getCustomConversions() {
-		return cassandraConverter.getCustomConversions();
-	}
-
-	private ConversionService getConversionService() {
-		return cassandraConverter.getConversionService();
+		return property.getTypeInformation();
 	}
 
 	/**
@@ -191,7 +174,7 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 			return CassandraSimpleTypeHolder.getDataTypeFor(cassandraType.type());
 		}
 
-		CassandraMappingContext mappingContext = cassandraConverter.getMappingContext();
+		CassandraMappingContext mappingContext = converter.getMappingContext();
 		TypeInformation<?> typeInformation = ClassTypeInformation.from(getParameterType(index));
 
 		if (property == null) {
@@ -201,7 +184,6 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 		DataType dataType = mappingContext.getDataType(property);
 
 		if (property.isCollectionLike() && !typeInformation.isCollectionLike()) {
-
 			if (dataType instanceof CollectionType) {
 				CollectionType collectionType = (CollectionType) dataType;
 
@@ -212,7 +194,6 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 		}
 
 		if (!property.isCollectionLike() && typeInformation.isCollectionLike()) {
-
 			if (typeInformation.isAssignableFrom(SET)) {
 				return DataType.set(dataType);
 			}
@@ -221,7 +202,6 @@ class ConvertingParameterAccessor implements CassandraParameterAccessor {
 		}
 
 		if (property.isMap()) {
-
 			if (dataType instanceof CollectionType) {
 				CollectionType collectionType = (CollectionType) dataType;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
@@ -189,7 +193,7 @@ class EmbeddedCassandraServerHelper {
 		createCassandraDirectories();
 
 		CommitLog commitLog = CommitLog.instance;
-		commitLog.getContext(); // wait for commit log allocator instantiation to avoid hanging on a race condition
+		commitLog.getCurrentPosition(); // wait for commit log allocator instantiation to avoid hanging on a race condition
 		commitLog.resetUnsafe(true); // cleanup screws w/ CommitLog, this brings it back to safe state
 	}
 
